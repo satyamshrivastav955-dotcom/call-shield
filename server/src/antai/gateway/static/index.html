@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>antAI — Security Console</title>
+<style>
+  :root {
+    --bg: #f0f2f5; --surface: #ffffff; --surface2: #f7f8fa; --line: #e3e6ea;
+    --ink: #111827; --muted: #6b7280; --accent: #0e7c7b; --accent-bg: #d1eceb;
+    --low: #16a34a; --low-bg: #dcfce7;
+    --med: #ca8a04; --med-bg: #fef9c3;
+    --high: #dc2626; --high-bg: #fee2e2;
+    --critical: #7f1d1d; --critical-bg: #fecaca;
+    --radius: 14px; --radius-sm: 8px;
+    --font: Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--ink); min-height: 100vh; line-height: 1.5; font-size: 14px; }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--line);
+    padding: 14px 28px; display: flex; align-items: center; gap: 14px;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .logo { width: 36px; height: 36px; border-radius: 10px; background: var(--accent); display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 15px; flex-shrink: 0; }
+  .logo-text h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .logo-text p { font-size: 12px; color: var(--muted); }
+  .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 18px; }
+  .conn-pill { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); background: var(--surface2); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; }
+  .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; transition: background .3s; }
+  .conn-dot.on { background: var(--low); box-shadow: 0 0 0 3px var(--low-bg); }
+  .scenario-wrap { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+  select { font-size: 12.5px; padding: 5px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface2); color: var(--ink); cursor: pointer; outline: none; }
+  select:focus { border-color: var(--accent); }
+
+  /* ── Layout ── */
+  main { max-width: 1280px; margin: 0 auto; padding: 20px 20px 40px; display: grid; gap: 18px; }
+  .top-strip { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+  .main-grid { display: grid; grid-template-columns: 400px 1fr; gap: 18px; }
+  @media (max-width: 1024px) { .top-strip { grid-template-columns: 1fr 1fr; } .main-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .top-strip { grid-template-columns: 1fr; } }
+
+  /* ── Cards ── */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .card-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 700; margin-bottom: 10px; }
+  .card-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+
+  /* ── Stat tiles ── */
+  .stat-tile .val { font-size: 26px; font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; }
+  .stat-tile .sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  /* ── Caller card ── */
+  .caller-card { display: flex; align-items: flex-start; gap: 14px; }
+  .caller-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--accent-bg); color: var(--accent); font-weight: 800; font-size: 20px; display: grid; place-items: center; flex-shrink: 0; }
+  .caller-name { font-size: 17px; font-weight: 700; }
+  .caller-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .demo-badge { display: inline-block; background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; border-radius: 4px; font-size: 10px; font-weight: 700; padding: 1px 6px; letter-spacing: .05em; margin-left: 6px; text-transform: uppercase; vertical-align: middle; }
+  .txn-row { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .txn-row:last-child { border-bottom: none; }
+  .txn-label { color: var(--muted); }
+  .txn-amount { font-size: 20px; font-weight: 800; color: var(--high); letter-spacing: -0.02em; }
+
+  /* ── Risk gauge ── */
+  .risk-ring-wrap { display: flex; flex-direction: column; align-items: center; padding: 10px 0 0; }
+  .risk-ring-svg { width: 180px; height: 100px; overflow: visible; }
+  .risk-num { font-size: 44px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+  .risk-num small { font-size: 16px; color: var(--muted); font-weight: 600; }
+  .risk-label-big { font-size: 13px; font-weight: 700; margin-top: 4px; letter-spacing: .04em; text-transform: uppercase; }
+  .verdict-banner { margin-top: 14px; padding: 14px 18px; border-radius: var(--radius-sm); text-align: center; font-weight: 700; font-size: 15px; letter-spacing: 0.04em; border: 2px solid transparent; transition: background .4s, border-color .4s, color .4s; }
+  .verdict-banner.safe { background: var(--low-bg); color: var(--low); border-color: #86efac; }
+  .verdict-banner.verify { background: var(--med-bg); color: var(--med); border-color: #fde68a; }
+  .verdict-banner.high { background: var(--high-bg); color: var(--high); border-color: #fca5a5; }
+  .verdict-banner.critical { background: var(--critical-bg); color: var(--critical); border-color: #f87171; }
+
+  /* ── Meter bar ── */
+  .meter { height: 6px; border-radius: 3px; background: var(--surface2); overflow: hidden; margin-top: 10px; }
+  .meter > span { display: block; height: 100%; width: 0; transition: width .5s ease, background .5s ease; border-radius: 3px; }
+
+  /* ── Signal cards ── */
+  .signals-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 700px) { .signals-grid { grid-template-columns: 1fr; } }
+  .sig { background: var(--surface2); border-radius: var(--radius-sm); padding: 14px; border: 1px solid var(--line); transition: border-color .4s; }
+  .sig.flagged { border-color: var(--high); background: #fff8f8; }
+  .sig .sig-label { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+  .sig .sig-val { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+  .sig .sig-sub { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .sig .sig-bar { height: 4px; border-radius: 2px; background: #e5e7eb; margin-top: 10px; overflow: hidden; }
+  .sig .sig-bar > span { display: block; height: 100%; width: 0; transition: width .5s ease, background .5s ease; border-radius: 2px; }
+
+  /* ── Recommendation ── */
+  .rec-box { border-radius: var(--radius-sm); padding: 14px 16px; border-left: 4px solid var(--accent); background: var(--surface2); margin-top: 12px; }
+  .rec-box.high { border-left-color: var(--high); background: #fff8f8; }
+  .rec-box.verify { border-left-color: var(--med); background: #fffdf0; }
+  .rec-box .rec-title { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+  .rec-box .rec-text { font-size: 13.5px; line-height: 1.55; }
+  .rec-steps { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .rec-step { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; }
+  .rec-step-dot { width: 20px; height: 20px; border-radius: 50%; background: var(--high); color: #fff; font-size: 10px; font-weight: 800; display: grid; place-items: center; flex-shrink: 0; }
+  .rec-step-dot.verify { background: var(--med); }
+  .rec-step-dot.safe { background: var(--low); }
+
+  /* ── Sparkline ── */
+  .spark { width: 100%; height: 80px; }
+
+  /* ── Reasons ── */
+  .reasons-list { list-style: none; padding: 0; margin: 0; }
+  .reasons-list li { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; display: flex; align-items: flex-start; gap: 8px; }
+  .reasons-list li:last-child { border-bottom: none; }
+  .reasons-list .r-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .reasons-list.empty { color: var(--muted); font-size: 12.5px; }
+
+  /* ── Controls ── */
+  .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  input[type=file] { font-size: 12.5px; color: var(--muted); cursor: pointer; }
+  btn, button { display: inline-flex; align-items: center; gap: 6px; background: var(--accent); color: #fff; border: none; padding: 9px 16px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; font-size: 13px; font-family: var(--font); transition: opacity .15s; }
+  button:hover { opacity: 0.88; }
+  button.secondary { background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
+  button:disabled { opacity: .45; cursor: default; }
+
+  /* ── Engine chips ── */
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip { font-size: 10.5px; padding: 3px 9px; border-radius: 999px; background: var(--surface2); color: var(--muted); border: 1px solid var(--line); font-weight: 600; }
+  .chip.on { color: var(--low); border-color: #86efac; background: var(--low-bg); }
+  .chip.off { color: var(--high); border-color: #fca5a5; background: var(--high-bg); }
+
+  /* ── Transcript ── */
+  .transcript { max-height: 140px; overflow-y: auto; font-size: 12.5px; line-height: 1.5; }
+  .transcript .ts { color: var(--muted); font-size: 11px; margin-right: 4px; }
+
+  /* ── Misc ── */
+  .stat-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 4px 0; }
+  .stat-row b { color: var(--ink); }
+  .footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 10px; }
+  .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">A</div>
+  <div class="logo-text">
+    <h1>antAI — Security Console</h1>
+    <p>Voice authenticity · scam risk · real-time protection</p>
+  </div>
+  <div class="hdr-right">
+    <div class="scenario-wrap">
+      <label for="scenario" style="font-size:12px;color:var(--muted);">Scenario</label>
+      <select id="scenario">
+        <option value="routine_call">Routine Call</option>
+        <option value="high_value_txn" selected>High-Value Transaction</option>
+        <option value="privileged_access">Privileged Access</option>
+      </select>
+    </div>
+    <div class="conn-pill">
+      <span class="conn-dot" id="dot"></span>
+      <span id="connlbl">Not connected</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Top stat strip -->
+  <div class="top-strip">
+    <div class="card stat-tile">
+      <div class="card-label">Risk Score</div>
+      <div class="val" id="riskNum" style="color:var(--low)">—<small style="font-size:14px;color:var(--muted);font-weight:600"> / 100</small></div>
+      <div class="sub" id="riskSub">Waiting for audio</div>
+    </div>
+    <div class="card stat-tile">
+      <div class="card-label">Session Peak</div>
+      <div class="val" id="peakNum" style="color:var(--muted)">—</div>
+      <div class="sub">Highest this session</div>
+    </div>
+    <div class="card stat-tile">
+      <div class="card-label">Audio Segments</div>
+      <div class="val" id="segsNum" style="color:var(--accent)">0</div>
+      <div class="sub">Chunks analyzed</div>
+    </div>
+    <div class="card stat-tile">
+      <div class="card-label">Active Scenario</div>
+      <div class="val" id="scenarioVal" style="font-size:16px;color:var(--ink)">High-Value Txn</div>
+      <div class="sub" id="thresholdSub">Verify at 50 · Alert at 70</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- LEFT column -->
+    <div style="display:flex;flex-direction:column;gap:18px;">
+
+      <!-- Caller / context card (demo data) -->
+      <div class="card">
+        <div class="card-label">Caller Context <span class="demo-badge">Demo</span></div>
+        <div class="caller-card">
+          <div class="caller-avatar" id="callerAvatar">R</div>
+          <div>
+            <div class="caller-name" id="callerName">Rahul Sharma</div>
+            <div class="caller-sub" id="callerSub">+91 98765 43210 · Unknown number</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+          <div class="txn-row"><span class="txn-label">Transaction type</span><span id="txnType" style="font-weight:600;">Fund Transfer</span></div>
+          <div class="txn-row"><span class="txn-label">Requested amount</span><span class="txn-amount" id="txnAmount">₹8,50,000</span></div>
+          <div class="txn-row"><span class="txn-label">Claimed identity</span><span id="claimedId" style="font-weight:600;">Branch Manager</span></div>
+          <div class="txn-row"><span class="txn-label">Historical risk</span><span id="historicalRisk" style="font-weight:600;color:var(--low)">None on record</span></div>
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.5;">
+          All caller fields above are simulated demo data. Detection scores below are real.
+        </div>
+      </div>
+
+      <!-- Risk gauge -->
+      <div class="card" style="text-align:center;">
+        <div class="card-label">Live Risk</div>
+        <div style="display:flex;justify-content:center;padding:8px 0;">
+          <svg class="risk-ring-svg" viewBox="-5 -5 190 105" style="overflow:visible">
+            <!-- background arc -->
+            <path d="M 10 90 A 80 80 0 0 1 170 90" fill="none" stroke="#e5e7eb" stroke-width="14" stroke-linecap="round"/>
+            <!-- risk arc (updated by JS) -->
+            <path id="riskArc" d="M 10 90 A 80 80 0 0 1 170 90" fill="none" stroke="#16a34a" stroke-width="14" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2" style="transition:stroke-dashoffset .6s ease,stroke .5s ease;"/>
+            <!-- threshold marker at 50% (verify) drawn by JS -->
+            <line id="threshMarker" x1="90" y1="10" x2="90" y2="24" stroke="#ca8a04" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="risk-num" id="gaugeNum" style="color:var(--low)">—<small> / 100</small></div>
+        <div class="risk-label-big" id="riskBand" style="color:var(--muted)">MONITORING</div>
+        <div class="meter" style="margin-top:14px;">
+          <span id="riskMeter" style="background:var(--low)"></span>
+        </div>
+        <!-- Verdict banner -->
+        <div class="verdict-banner safe" id="verdictBanner">
+          SAFE — Continue monitoring
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="card">
+        <div class="card-label">Analyze audio</div>
+        <div class="controls">
+          <input type="file" id="file" accept="audio/*" />
+          <button id="analyze">Analyze file</button>
+        </div>
+        <div class="controls" style="margin-top:10px;">
+          <button class="secondary" id="attach">Connect live stream</button>
+          <button class="secondary" id="stop" disabled>Disconnect</button>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.6;">
+          <b>Analyze file</b> scores one audio file through the full pipeline.<br/>
+          <b>Connect live stream</b> opens a real-time session — then run
+          <code style="background:var(--surface2);padding:1px 5px;border-radius:4px;font-size:11px;">python scripts/stream_demo_file.py &lt;file&gt;</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT column -->
+    <div style="display:flex;flex-direction:column;gap:18px;">
+
+      <!-- Three signal families -->
+      <div class="card">
+        <div class="section-title">Signal breakdown — why this result?</div>
+        <div class="signals-grid">
+          <!-- Acoustic -->
+          <div class="sig" id="sigAcoustic">
+            <div class="sig-label">Voice Authenticity</div>
+            <div class="sig-val" id="acVal">—</div>
+            <div class="sig-sub" id="acSub">No result yet</div>
+            <div class="sig-bar"><span id="acBar" style="background:var(--high)"></span></div>
+          </div>
+          <!-- Prosody -->
+          <div class="sig" id="sigProsody">
+            <div class="sig-label">Message Patterns</div>
+            <div class="sig-val" id="prVal">—</div>
+            <div class="sig-sub" id="prSub">No result yet</div>
+            <div class="sig-bar"><span id="prBar" style="background:var(--med)"></span></div>
+          </div>
+          <!-- Voiceprint -->
+          <div class="sig" id="sigVoiceprint">
+            <div class="sig-label">Speaker Identity</div>
+            <div class="sig-val" id="vpVal">—</div>
+            <div class="sig-sub" id="vpSub">No result yet</div>
+            <div class="sig-bar"><span id="vpBar" style="background:var(--accent)"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recommendation -->
+      <div class="card">
+        <div class="section-title">Recommendation</div>
+        <div id="recBox" class="rec-box">
+          <div class="rec-title">Action</div>
+          <div class="rec-text" id="recText">Waiting for audio analysis to begin.</div>
+          <div class="rec-steps" id="recSteps"></div>
+        </div>
+      </div>
+
+      <!-- Risk sparkline -->
+      <div class="card">
+        <div class="section-title">Risk over time</div>
+        <svg class="spark" id="spark" viewBox="0 0 600 80" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#dc2626" stop-opacity="0.15"/>
+              <stop offset="100%" stop-color="#dc2626" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- Threshold lines -->
+          <line x1="0" y1="48" x2="600" y2="48" stroke="#fde68a" stroke-dasharray="4 4" stroke-width="1.5"/>
+          <line x1="0" y1="24" x2="600" y2="24" stroke="#fca5a5" stroke-dasharray="4 4" stroke-width="1.5"/>
+          <polygon id="sparkFill" points="" fill="url(#sparkGrad)"/>
+          <polyline id="sparkLine" fill="none" stroke="var(--accent)" stroke-width="2" points=""/>
+        </svg>
+        <div style="display:flex;gap:16px;margin-top:6px;font-size:11px;color:var(--muted);">
+          <span>— Yellow: verify threshold</span><span>— Red: high-risk threshold</span>
+        </div>
+      </div>
+
+      <!-- Active signals / reasons -->
+      <div class="card">
+        <div class="section-title">Active signals</div>
+        <ul class="reasons-list empty" id="reasons"><li>No concerning signals detected.</li></ul>
+      </div>
+
+      <!-- Transcript + system -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+        <div class="card">
+          <div class="section-title">Transcript</div>
+          <div class="transcript" id="transcript"><span style="color:var(--muted)">No speech yet.</span></div>
+        </div>
+        <div class="card">
+          <div class="section-title">Detection engines</div>
+          <div class="chips" id="engines"><span class="chip">No data</span></div>
+          <div style="margin-top:10px;">
+            <div class="stat-row"><span>ASR failures</span><b id="asrFails">0</b></div>
+            <div class="stat-row"><span>Last update</span><b id="lastT">—</b></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer">
+    Scores are computed live by the antAI detection pipeline. A missing value (—) means the check did not produce a result.
+    It is never shown as zero. Caller context is simulated demo data; detection scores are real.
+  </div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
