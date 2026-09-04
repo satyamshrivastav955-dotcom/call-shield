@@ -1,0 +1,159 @@
+# antAI server configuration
+server:
+  host: "0.0.0.0"
+  port: 8765
+  debug: true
+
+auth:
+  auto_verify_otp: true        # prototype: skip real SMS, accept any OTP
+  token_ttl_hours: 720
+  otp_len: 6
+
+storage:
+  url: "sqlite:///antai.db"
+  encryption_key: "change-me-please"   # used to derive Fernet key (REPLACE in prod)
+
+models:
+  root: "models"
+  device: "auto"               # auto | cuda | cpu
+  llm_device: "auto"           # where Qwen runs
+  llm_size: "3b"               # 3b | 1.5b
+
+  # Per-engine enable/disable + weights paths (drop files here manually, or run setup/download_models.py)
+  engines:
+    asr:            { enabled: true }    # backend chosen in `providers.asr` (deepgram)
+    voice_deepfake: { enabled: true }    # backend chosen in `providers.voice_deepfake`
+    speaker_verify: { enabled: true }    # local ECAPA voiceprint (models/speaker_verify)
+    face:           { enabled: true }
+    video_deepfake: { enabled: true }
+    community_vit:  { enabled: true }
+    dicome:         { enabled: true }
+    decof:          { enabled: true }
+    lipsync:        { enabled: true }
+    scam_pattern:   { enabled: true }
+    behavioral:     { enabled: true }
+    urgency:        { enabled: true }
+    intent:         { enabled: true }
+    llm:            { enabled: true }    # backend chosen in `providers.llm` (groq)
+
+# Hosted-API backends for the VOICE pipeline. The local voice models are turned
+# off here and delegated to these APIs; the engine names stay the same so the
+# in-call "Models n/m loaded" indicator still shows them running. Video/text/
+# other detectors are unchanged (still local). API KEYS live in server/.env
+# (gitignored) — never in this file.
+providers:
+  asr: deepgram              # deepgram | faster_whisper
+  voice_deepfake: both       # both | velma | local
+  llm: groq                  # groq | local
+  deepgram:
+    model: nova-2            # nova-2 supports multilingual + language detection
+    endpoint: "https://api.deepgram.com/v1/listen"
+  velma:
+    model_id: "velma-2-synthetic-voice-detection-streaming"
+    # Modulate VELMA-2 streaming WebSocket. Auth is via ?api_key= (added from
+    # VELMA_API_KEY in .env). Leave endpoint here to override the built-in
+    # default, or set VELMA_ENDPOINT in .env.
+    endpoint: "wss://platform.modulate.ai/api/velma-2-synthetic-voice-detection-streaming"
+    auth_style: query          # query (?api_key=) for Modulate
+    config_json: ""            # first WS frame (JSON); "" -> {"behaviors":["preset:synthetic_voice"]}
+    response_path: ""          # optional dotted JSON path override to the synthetic-voice score
+    # End-of-stream framing. "" = negotiate once on the first segment and reuse
+    # the winner (recommended). Pin to binary | text | json | none only if you
+    # already know which one this endpoint accepts — the wrong one is closed
+    # with 1003 (unsupported data) and every segment silently scores nothing.
+    eos: ""
+  groq:
+    model: "openai/gpt-oss-120b"
+    endpoint: "https://api.groq.com/openai/v1/chat/completions"
+
+pipeline:
+  sample_rate: 16000
+  vad_aggressiveness: 2       # 0-3 (2 = moderate: keeps quieter speech, drops noise)
+  video_fps: 6                 # frame sampling rate
+  asr_beam_size: 1
+  asr_language: null           # null = auto-detect (en/hi both supported)
+  min_segment_s: 0.4           # VAD: emit nothing shorter than this (improves Whisper)
+  hangover_s: 0.4              # VAD: silence tolerated before ending a segment
+  max_segment_s: 2.0           # VAD: force-flush a long continuous segment (lower = snappier transcript)
+  speaker_sim_threshold: 0.60  # voiceprint match threshold (ECAPA cosine sim)
+  video_vote_threshold: 2     # ensemble: flag fake when >=N signals agree
+  risk_bands:
+    log: 40
+    verify: 70
+  freeze_enabled: true
+  collective_check_enabled: true
+  live_guidance_interval_s: 2.0
+  live_guidance_max_tokens: 180
+  live_signals_interval_s: 0.7      # stream per-engine model signals at most this often
+  eval_interval_s: 2.0              # periodic pipeline tick (SSL + fusion + LLM run a chunk)
+  report_after: true
+  deepfake_alert_enabled: true
+  # Synthetic-voice prob above this -> pause + popup. Reached when BOTH detectors
+  # agree, or when a single detector is very confident. When the two detectors
+  # disagree the score is capped below this line on purpose: the risk still rises
+  # and the signal is shown, but the user is not interrupted by one model's guess.
+  voice_alert_threshold: 0.85
+  voice_agreement_bonus: true        # both backends flag -> escalate toward critical
+  voice_disagreement_cap: 0.84       # one flags, one clears -> cap below the alert line
+  # ...except when the flagging backend is near-certain. Without this exemption a
+  # confident clone detection could NEVER alert while the other backend disagreed.
+  voice_solo_alert_threshold: 0.95
+  # Seconds of that speaker's recent speech handed to the synthetic-voice models.
+  # VAD segments are 0.4-2.0s (kept short so the transcript stays live), but these
+  # SSL detectors were trained on multi-second utterances: fed one short segment
+  # they sit near chance, so a REAL cloned voice scores ~0.5 "uncertain" and never
+  # reaches voice_alert_threshold. Raise for accuracy, lower for latency; 0
+  # disables the window and scores the raw segment.
+  voice_window_s: 4.0
+  video_alert_threshold: 0.95       # deepfake-video prob above this -> pause + popup
+  deepfake_alert_cooldown_s: 15.0   # min seconds between alerts (per source)
+
+# ── Scenario-based risk thresholds ─────────────────────────────────────────
+# Each scenario overrides the global risk_bands for that session only.
+# The dashboard scenario selector and the stream API 'start' frame set this.
+# Scenarios with lower thresholds demand earlier verification — appropriate
+# for high-value or privileged interactions where the cost of a miss is high.
+scenarios:
+  routine_call:
+    label: "Routine Call"
+    description: "Standard personal call — alert only on strong signal."
+    risk_verify_at: 75
+    risk_critical_at: 90
+    context_risk_boost: 0
+
+  high_value_txn:
+    label: "High-Value Transaction"
+    description: "Financial transfer or large-value authorization."
+    risk_verify_at: 50
+    risk_critical_at: 70
+    context_risk_boost: 15     # base boost because stakes are high
+
+  privileged_access:
+    label: "Privileged Access"
+    description: "IT admin, banking credentials, or sensitive data access."
+    risk_verify_at: 40
+    risk_critical_at: 60
+    context_risk_boost: 20
+
+collective:
+  min_flags_before_shortcircuit: 3
+  max_flags_per_account_per_hour: 20
+  reputation_min_age_days: 7
+
+push:
+  provider: "ws"               # ws | fcm (fcm = stub adapter)
+  fcm_credentials: null
+
+# ICE (STUN/TURN) for WebRTC call/video media.
+# For USB-only media, run coturn with server/turnserver.conf on this machine and
+# forward the TURN port to each phone: adb reverse tcp:3478 tcp:3478
+# (usb_setup.bat does this). Media then relays over the USB tunnel. If coturn is
+# not running these are harmlessly ignored and same-Wi-Fi calls still work.
+ice:
+  enabled: true
+  stun_url: ""                                     # server side: no STUN (offline over USB)
+  turn_url: "turn:127.0.0.1:3478?transport=tcp"    # local TURN, reached over adb-reversed 3478
+  turn_username: "antai"
+  turn_password: "antaipass"
+
+log_level: "INFO"

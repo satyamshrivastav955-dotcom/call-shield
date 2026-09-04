@@ -1,0 +1,57 @@
+# NOTE (Windows dev setup):
+# - llama-cpp-python has no prebuilt wheel on PyPI for this platform and its
+#   sdist build fails on Windows due to MAX_PATH (vendors a full llama.cpp
+#   tree). Install the project's own prebuilt wheel index instead:
+#     pip install -r requirements.txt \
+#       --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+#   (swap /cpu for /cu121 etc. if installing the CUDA build)
+
+# Core
+fastapi
+uvicorn[standard]
+pydantic
+pyyaml
+itsdangerous
+cryptography
+python-multipart
+
+# WebRTC media relay
+aiortc
+av
+
+# Inference
+torch>=2.6.0
+torchaudio>=2.6.0
+faster-whisper
+transformers
+accelerate
+speechbrain
+sentence-transformers
+opencv-python
+mediapipe==0.10.9  # face.py uses the legacy mp.solutions API; removed on Windows
+                   # wheels somewhere after 0.10.9, gone entirely by 1.0
+onnxruntime
+peft  # LoRA adapter loading for the DiCoME video-deepfake head
+
+# Agentic orchestration
+langgraph
+langchain-core
+
+# Local self-hosted LLM (Qwen2.5 GGUF reasoning/advice engine)
+llama-cpp-python
+
+# Storage
+sqlalchemy
+
+# Utils
+numpy
+scipy
+soundfile
+websockets
+huggingface_hub
+httpx
+silero-vad
+firebase-admin
+
+# Dev/test
+pytest
