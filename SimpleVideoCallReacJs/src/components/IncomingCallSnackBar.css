@@ -1,0 +1,79 @@
+.incoming-call-snackbar {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #10365c;
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    width: 80%;
+    max-width: 400px;
+    z-index: 9999;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    animation: slideIn 0.3s ease-out;
+}
+
+.snackbar-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.snackbar-content h3 {
+    font-size: 1.2rem;
+    margin: 10px 0;
+    color: #bbdefb;
+}
+
+.snackbar-content h2 {
+    font-size: 1.5rem;
+    margin: 10px 0;
+    color: #e3f2fd;
+}
+
+.snackbar-buttons {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.snackbar-buttons button {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.accept-button {
+    background-color: #27ae60;
+    color: white;
+}
+
+.accept-button:hover {
+    background-color: #2ecc71;
+}
+
+.reject-button {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.reject-button:hover {
+    background-color: #c0392b;
+}
+
+@keyframes slideIn {
+    0% {
+        transform: translateX(-50%) translateY(-30px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}

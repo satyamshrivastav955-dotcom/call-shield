@@ -1,0 +1,61 @@
+.call-component {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 99%;
+    width: 99%;
+    background-color: #10314a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.video-container {
+    display: flex;
+    justify-content: space-between;
+    width: 80%;
+    height: 80%;
+    margin: 20px 0;
+    border-radius: 12px;
+    background-color: #bbdefb;
+    overflow: hidden;
+}
+
+.remote-video,
+.local-video {
+    margin: 10px 0;
+    width: 48%;
+    padding: 5px;
+    border-radius: 8px;
+}
+
+.call-controls {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    max-width: 200px;
+    background: #9fa2a6;
+    padding: 16px 0;
+    margin-top: 20px;
+    border-radius: 12px;
+
+}
+
+.call-controls button {
+    background-color: black;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+    font-size: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.call-controls button:hover {
+    background-color: #1976d2;
+}
+
+.call-controls button i,
+.call-controls button svg {
+    font-size: 20px;
+}

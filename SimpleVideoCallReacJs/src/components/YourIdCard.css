@@ -1,0 +1,60 @@
+.your-id-card {
+    background-color: #ffffff;
+    color: #000000;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 80%;
+    max-width: 400px;
+    margin: 20px auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.your-id-card:hover {
+    transform: translateY(-4px);
+}
+.your-id-card-text{
+    display: flex;
+    align-items: center;
+}
+
+.your-id-card p {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.toast {
+    position: absolute;
+    top: -40px; /* Position above the card */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #323232;
+    color: #ffffff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    animation: fadeInOut 3s ease;
+}
+.your-id-card-container {
+    width: 100%;
+    position: relative; /* Ensure the toast is positioned relative to the card */
+}
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+    10%, 90% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+}
