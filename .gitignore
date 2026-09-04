@@ -1,0 +1,80 @@
+# ==============================================================================
+# antAI Root .gitignore
+# ==============================================================================
+
+# OS & Environment files
+.DS_Store
+Thumbs.db
+*.env
+*.env.local
+*.env.*.local
+local.properties
+
+# Logs & Runtime Dumps
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+hs_err_pid*.log
+*.zip
+*.tar.gz
+
+# IDE & Editor files
+.idea/
+*.iml
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Node.js & Web
+node_modules/
+SimpleVideoCallReacJs/build/
+SimpleVideoCallReacJs/dist/
+SimpleVideoCallBackend/node_modules/
+SimpleVideoCallReacJs/node_modules/
+
+# Android & Gradle
+.gradle/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# Model Weights, Large Binaries & Caches (Downloadable via server/setup/download_models.py)
+server/models/
+*.safetensors
+*.bin
+*.onnx
+*.ckpt
+*.gguf
+*.h5
+*.pth
+*.pt
+*.tflite
+.cache/
+CACHEDIR.TAG
+.locks/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
