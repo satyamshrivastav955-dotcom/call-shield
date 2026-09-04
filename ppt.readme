@@ -1,0 +1,289 @@
+# antAI — Hackathon Pitch Deck Content
+# Track: Real-Time Scam and Impersonation Defense (Problem ID-IHNG6)
+#
+# Every claim below is tagged so Q&A knows instantly what to defend:
+#   [BUILT & WORKING]              — implemented and exercised
+#   [BUILT BUT NOT VERIFIED/TESTED]— implemented, not yet validated on hardware
+#   [DESIGNED, NOT YET BUILT]      — planned/scaffolded, not live
+#   [NEEDS EXTERNAL RESEARCH]      — needs a citation added by you
+#
+# Framed favorably but factually. Nothing below is fabricated.
+
+================================================================================
+1. PROBLEM STATEMENT
+================================================================================
+
+- The brief (Problem ID-IHNG6) "Real-Time Scam and Impersonation Defense":
+  scams now combine social engineering with AI-generated text, realistic
+  impersonation, and voice cloning, so keyword/link/sender filters fail because
+  the attack LOOKS like an ordinary conversation. [BUILT & WORKING]
+
+- The attack has shifted from "obvious spam" to "credible conversation" -
+  urgency, impersonation, and emotional pressure instead of links and
+  known-bad senders. [BUILT & WORKING — we coded against exactly this: urgency
+  scorer, intent classifier, and identity/voice signals target these, not
+  keyword matching]
+
+- A warning is not enough — the brief demands a PROTECTIVE ACTION (freeze a
+  request, notify a trusted contact, log an incident) before harm is done.
+  [BUILT & WORKING — Freeze/Intercept + Verify-with-trusted-contact + post-call
+  report are all implemented]
+
+- The verdict must never be a black box — it must EXPLAIN its reasoning in
+  plain language. [BUILT & WORKING — the LLM reasoner outputs verdict / why /
+  action in plain language]
+
+- Target users: elderly and vulnerable users who are most susceptible to
+  pressure/impersonation scams. [BUILT & WORKING — the LLM system prompt
+  explicitly addresses "elderly and vulnerable users"; the UI uses large,
+  plain-language verdict cards and blunt two-button confirm dialogs, not
+  technical scores]
+
+- Market size / prevalence statistics: none exist in the repo.
+  [NEEDS EXTERNAL RESEARCH — add a cited scam-loss figure here yourself]
+
+================================================================================
+2. SOLUTION APPROACH
+================================================================================
+
+- One-liner: antAI is a real-time scam-and-impersonation defense layer that
+  scores live calls, messages, and notifications across multiple signals,
+  explains its reasoning in plain language, and ACTS (freeze / verify / warn)
+  when risk is high. [BUILT & WORKING]
+
+- Multi-signal fusion, not keyword matching — risk is a weighted fusion of 9+
+  independent signals: scam-pattern text, urgency/pressure, actionable request
+  intent, behavioral deviation, voice authenticity (synthetic-voice), video
+  authenticity (deepfake), lip-sync mismatch, identity mismatch, and collective
+  community flags. [BUILT & WORKING — fusion_node in orchestration/nodes.py]
+
+- Dual channel — the protected user is covered on every surface: (1) in-app
+  voice/video calls, and (2) SMS + third-party-app notifications from ANY sender
+  on the public network (a scammer needs to install nothing for the SMS /
+  notification channel). [BUILT & WORKING — SmsReceiver,
+  AntaiNotificationListenerService, /api/notify/external]
+
+- Explainable by design — every output is plain-language
+  "verdict -> why -> what to do now", never a raw score. [BUILT & WORKING —
+  reasoner.py generate_verdict / generate_live_guidance]
+
+- Protective escalation ladder — passive log -> verify-with-trusted-contact ->
+  freeze/intercept -> critical pause-with-disclaimer. [BUILT & WORKING —
+  decision_node + intercept/ + trust_circle/]
+
+- Agentic orchestration — a native LangGraph state machine routes each event
+  (voice/video vs text) through only the relevant detectors. [BUILT & WORKING —
+  orchestration/graph.py]
+
+- In-app calling is the clean-audio channel for the protected user and their
+  trusted circle. [BUILT & WORKING]
+
+- Full real-cellular-call screening (default-dialer / CallScreeningService /
+  InCallService) is the next phase. [DESIGNED, NOT YET BUILT —
+  ANTAI_V3_DEVICE_LEVEL_PLAN.md sections 4-8]
+
+================================================================================
+3. WORKFLOW (actual end-to-end call chain)
+================================================================================
+
+Live call (app-to-app WebRTC + analysis tap):
+- 1. Phone A <-> Phone B establish a WebRTC call via the Node.js signaling
+  server (SimpleVideoCallBackend/server.js, port 3007). [BUILT & WORKING]
+- 2. In parallel, each phone opens a SECOND, send-only WebRTC peer connection to
+  the antAI server (/ws/tap, AiTapEngine.kt -> gateway/tap.py), carrying a copy
+  of its mic/camera. The real call stays P2P and untouched. [BUILT & WORKING]
+- 3. The server's aiortc SFU decodes the tapped media and forks every frame into
+  ingestion (media_sfu/tap_session.py, media_sfu/tracks.py). [BUILT & WORKING]
+- 4. Audio -> Silero VAD segments speech (ingestion/audio.py) -> Deepgram ASR
+  (or local faster-whisper) -> live transcript. Video -> 6 fps frame sampler
+  (ingestion/frames.py). [BUILT & WORKING]
+- 5. Each audio segment / 24-frame batch triggers the LangGraph pipeline
+  (SessionRunner in orchestration/dispatcher.py): router -> voice-deepfake +
+  video-deepfake -> identity -> collective-DB -> urgency -> intent -> fusion ->
+  decision -> LLM. [BUILT & WORKING]
+- 6. Verdict / guidance / transcript / per-model signals are pushed over
+  WebSocket (RealtimeHub) to both phones and rendered in the in-call "antAI"
+  overlay window (AiInsightWindow.kt). [BUILT & WORKING]
+
+Message / notification:
+- 7. Chat message (/ws/chat or /api/chat/send) or SMS / notification
+  (/api/notify/external) -> keyword triage gate -> same text/urgency/intent/
+  fusion/LLM path -> verdict pushed; high-risk messages intercepted before
+  delivery. [BUILT & WORKING]
+
+Protective actions (live):
+- 8. risk >= 70 + actionable request -> Freeze/Intercept (holds OTP/money/
+  credential/link action with an override). [BUILT & WORKING —
+  intercept/controller.py]
+- 9. Synthetic voice / deepfake video / credential ask / identity mismatch ->
+  call pauses with a "Possible scam" disclaimer popup on both phones.
+  [BUILT & WORKING]
+- 10. "Verify who this really is" -> REST /api/verify/request -> trusted contact
+  gets a Yes/No prompt -> result drives the in-call bar + verdict.
+  [BUILT & WORKING]
+
+================================================================================
+4. KEY FEATURES & INNOVATION
+================================================================================
+
+Live & working:
+- Real-time scam scoring on live calls (voice + video) with a continuous risk
+  band (monitoring / caution / high-risk). [BUILT & WORKING]
+- Synthetic-voice detection — SSL ensemble (AST-ASVspoof5 + wav2vec2 deepfake-
+  voice detector) with a Modulate Velma-2 hosted fallback. [BUILT & WORKING —
+  exact models read from deepfake_voice.py / providers.py]
+- Video deepfake detection — ensemble of CommunityForensics DeepfakeDet-ViT
+  (CVPR 2025) + DiCoME (evidential CLIP + LoRA head). [BUILT & WORKING]
+- Scam-pattern text classifier — fine-tuned DistilBERT over 8 scam types
+  (family-emergency, OTP, bank, prize, job, romance, remote-access, gift-card),
+  bilingual EN/Hindi. [BUILT & WORKING]
+- Urgency/pressure scorer + request/intent classifier (money / OTP / credential
+  / remote-access / link). [BUILT & WORKING]
+- Behavioral-deviation model (sentence-transformers) — flags "Dad suddenly
+  writing in a different register asking for money". [BUILT & WORKING]
+- Plain-language LLM reasoning — self-hosted Qwen2.5-3B (llama.cpp) with a Groq
+  hosted fallback; emits verdict/why/action + post-call report. [BUILT & WORKING]
+- Freeze/Intercept — holds OTP/money/credential/link actions mid-conversation
+  with a conscious override (never a silent block). [BUILT & WORKING]
+- Verify-with-trusted-contact — the "is this really you?" escalation to a linked
+  family member. [BUILT & WORKING]
+- Collective flagging DB — hash-based, reputation-weighted community scam flags.
+  [BUILT & WORKING]
+- SMS + notification guard — reads incoming SMS and other-app notifications,
+  scans them, no sender cooperation needed. [BUILT & WORKING]
+- Live transcript streaming and per-model signal streaming into the UI.
+  [BUILT & WORKING]
+
+Security / privacy (actual code, not aspiration):
+- Phone numbers encrypted at rest (Fernet, storage/crypto.py). [BUILT & WORKING]
+- Collective flags stored as SHA-256 hashes, never raw PII. [BUILT & WORKING]
+- Voiceprints stored as embeddings only (raw audio not retained).
+  [BUILT & WORKING]
+- API keys in gitignored .env, never committed. [BUILT & WORKING]
+
+Scaffolded / designed, not yet active (say "on the roadmap", not "live"):
+- Voiceprint identity match (ECAPA-TDNN) — enrolment endpoint exists, matching
+  model currently disabled. [DESIGNED, NOT YET BUILT — speaker_verify
+  enabled:false in config.yaml]
+- DeCoF fully-AI-video detector — wired, weights not released.
+  [DESIGNED, NOT YET BUILT]
+- Real cellular-call screening (ROLE_CALL_SCREENING / ROLE_DIALER).
+  [DESIGNED, NOT YET BUILT]
+
+================================================================================
+5. TECHNOLOGY STACK (exact, from dependency files)
+================================================================================
+
+- Mobile (Android): Kotlin 2.0.0 · Jetpack Compose (BOM 2024.04.01) · Hilt 2.50
+  · WebRTC (com.mesibo.api:webrtc:1.0.5) · Java-WebSocket 1.5.3 · Gson 2.10.1 ·
+  kotlinx-coroutines 1.8.1 · AGP 8.7.3 · minSdk 24 / targetSdk 34 /
+  compileSdk 35. [BUILT & WORKING]
+
+- Detection server (Python): FastAPI · uvicorn · LangGraph + langchain-core ·
+  aiortc + av (media relay/SFU) · PyTorch >=2.6 · transformers · faster-whisper
+  (CTranslate2) · speechbrain · sentence-transformers · mediapipe 0.10.9 ·
+  opencv-python · silero-vad · llama-cpp-python · SQLAlchemy (SQLite) ·
+  cryptography (Fernet) · itsdangerous · firebase-admin (FCM) · websockets.
+  [BUILT & WORKING]
+
+- Signaling server: Node.js · ws 8.18.0 · firebase-admin 13.6.0. [BUILT & WORKING]
+
+- Web test client: React 18.3 · Vite 6 · react-router-dom 7. [BUILT & WORKING]
+
+- API integrations (in code): Deepgram (STT) · Modulate Velma-2 (synthetic-voice)
+  · Groq (LLM) · Firebase Cloud Messaging (push/offline-call notifications).
+  [BUILT & WORKING]
+
+- Deployment: self-hosted services on the developer laptop (uvicorn on :8765,
+  Node on :3007, coturn TURN relay). No Dockerfiles or CI/CD present in the repo.
+  [BUILT & WORKING — "self-hosted, no CI yet"]
+
+================================================================================
+6. FEASIBILITY & VIABILITY
+================================================================================
+
+- It runs end-to-end today — server boots, all detection engines load, and the
+  full call -> pipeline -> verdict -> UI loop has been exercised on two real
+  phones. [BUILT & WORKING]
+
+- Graceful degradation built in — every model is lazy-loaded with a fail-soft
+  fallback; a missing model/API degrades to a heuristic and the pipeline never
+  crashes the call. [BUILT & WORKING — hub.py + per-engine fallbacks]
+
+- Real cost drivers (actual paid APIs called): Deepgram, Modulate Velma, Groq —
+  per-call/per-token. [BUILT & WORKING]
+
+- Cost-offramp already coded: each of the three hosted APIs can be switched back
+  to a LOCAL model (faster-whisper, local SSL voice ensemble, local Qwen GGUF)
+  by flipping one config value — so a live demo can run fully offline at zero
+  API cost. [BUILT & WORKING — providers.* backend selectors in config.yaml]
+
+- Latency-conscious design — heavy model calls run off the event loop
+  (asyncio.to_thread), the media relay is never stalled, and the transcript/LLM
+  stream in the background. [BUILT & WORKING]
+
+- Known constraint (frame positively): call analysis requires the app on both
+  ends (app-to-app); the SMS/notification channel already works for any external
+  sender, and real-call screening is the stated next phase.
+  [BUILT & WORKING + DESIGNED]
+
+================================================================================
+7. FUTURE SCOPE (grounded in real TODOs/stubs, not a wishlist)
+================================================================================
+
+- Real-cellular-call screening — acquire ROLE_CALL_SCREENING / ROLE_DIALER to
+  inspect real incoming calls pre-ring. [DESIGNED, NOT YET BUILT —
+  ANTAI_V3_DEVICE_LEVEL_PLAN.md section 4]
+
+- Re-enable voiceprint identity matching (ECAPA-TDNN) to complete the
+  "cloned-family-member" story. [DESIGNED, NOT YET BUILT — speaker_verify
+  disabled]
+
+- DeCoF fully-AI-video detector once weights ship. [DESIGNED, NOT YET BUILT]
+
+- Unified identity between the call-tap auth path and the messaging token
+  (currently two separate user identities) to enable automatic
+  relationship-claim verification. [DESIGNED, NOT YET BUILT]
+
+- Post-call feedback -> reputation loop to strengthen the collective DB.
+  [DESIGNED, NOT YET BUILT]
+
+- Containerized/CI deployment (no Dockerfile/CI exists yet).
+  [DESIGNED, NOT YET BUILT]
+
+================================================================================
+8. RESEARCH & REFERENCES
+================================================================================
+
+Open-source libraries (exact, from dependency files):
+- LangGraph / LangChain (langgraph, langchain-core) · PyTorch >=2.6 · Hugging
+  Face transformers · faster-whisper (CTranslate2) · speechbrain ·
+  sentence-transformers · MediaPipe 0.10.9 · OpenCV (opencv-python) ·
+  silero-vad · llama-cpp-python · aiortc + av · FastAPI/uvicorn · SQLAlchemy ·
+  Android: Jetpack Compose, Hilt, Java-WebSocket, Gson. [BUILT & WORKING]
+
+Model checkpoints referenced in code/comments:
+- Voice: AST-ASVspoof5 (MattyB95), wav2vec2-deepfake-voice-detector
+  (garystafford), Modulate Velma-2.
+- Video: CommunityForensics DeepfakeDet-ViT (CVPR 2025), DiCoME (ICML 2026),
+  DeCoF (arXiv 2402.02085).
+- Text: distilbert-base-multilingual-cased (fine-tuned heads),
+  paraphrase-multilingual-MiniLM-L12-v2.
+- ASR: faster-whisper-small (Systran), Deepgram nova-2.
+- LLM: Qwen2.5-3B-Instruct GGUF, Groq (Llama 3.3 70B).
+
+What you still need to add yourself (not in the repo):
+- Market-size / scam-loss statistics. [NEEDS EXTERNAL RESEARCH]
+- Academic citations for the ASVspoof5 / DeepfakeDet-ViT / DiCoME / DeCoF
+  papers. [NEEDS EXTERNAL RESEARCH]
+- The hackathon track reference (Problem ID-IHNG6) for the title slide.
+  [NEEDS EXTERNAL RESEARCH]
+
+================================================================================
+LIVE-DEMO HEADS-UP (one-line config fix, not a code change)
+================================================================================
+
+- The current config.yaml pins the Groq LLM to "llama-3.3-70b-versatile", which
+  Groq retired on 2026-08-16. For a live demo, flip config.yaml line 61 to
+  model: "openai/gpt-oss-120b" (or the LLM falls back to the local Qwen model,
+  which also works).
