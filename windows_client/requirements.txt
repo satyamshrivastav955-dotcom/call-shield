@@ -1,0 +1,13 @@
+# antAI Windows Client — Python Dependencies
+
+# Core async WebSocket (same protocol as Android AntaiClient)
+websockets>=12.0
+
+# Microphone capture (cross-platform, Windows-friendly)
+sounddevice>=0.4.6
+
+# Numpy for PCM buffering and float32 conversion
+numpy>=1.24
+
+# Desktop toast notifications (Windows, macOS, Linux)
+plyer>=2.1.0
