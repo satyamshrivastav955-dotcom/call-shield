@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- WhatsApp-inspired palette -->
+    <color name="wa_header">#075E54</color>
+    <color name="wa_accent">#25D366</color>
+    <color name="wa_chat_bg">#ECE5DD</color>
+    <color name="wa_bubble_out">#DCF8C6</color>
+    <color name="wa_teal_dark">#054D44</color>
+
+    <color name="teal_700">#075E54</color>
+    <color name="teal_600">#128C7E</color>
+    <color name="ink">#0F172A</color>
+    <color name="surface">#F8FAFC</color>
+    <color name="card">#FFFFFF</color>
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#475569</color>
+    <color name="safe">#059669</color>
+    <color name="warn">#D97706</color>
+    <color name="danger">#DC2626</color>
+    <color name="border">#E2E8F0</color>
+</resources>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/wa_chat_bg">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:paddingHorizontal="12dp" android:paddingTop="8dp" android:paddingBottom="8dp"
+        android:background="@color/wa_header" android:fitsSystemWindows="true">
+        <ImageButton android:id="@+id/btnBack" android:layout_width="40dp" android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back" />
+        <TextView android:id="@+id/tvTitle" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1"
+            android:textSize="18sp" android:textStyle="bold" android:textColor="#FFFFFF" />
+        <ImageButton android:id="@+id/btnVideoCall" android:layout_width="40dp"
+            android:layout_height="40dp" android:src="@android:drawable/ic_menu_camera"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Video call" />
+        <ImageButton android:id="@+id/btnCall" android:layout_width="40dp"
+            android:layout_height="40dp" android:src="@android:drawable/ic_menu_call"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Call" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvMessages" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1" />
+
+    <androidx.cardview.widget.CardView android:id="@+id/cardVerdict"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_margin="8dp" android:visibility="gone"
+        app:cardCornerRadius="12dp" xmlns:app="http://schemas.android.com/apk/res-auto">
+        <TextView android:id="@+id/tvVerdict" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:padding="14dp"
+            android:textSize="14sp" android:textColor="#FFFFFF"
+            android:background="#059669" />
+    </androidx.cardview.widget.CardView>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:padding="8dp" android:gravity="center_vertical">
+        <EditText android:id="@+id/etInput" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1"
+            android:hint="Type a message…" android:background="@drawable/bg_input"
+            android:padding="12dp" android:maxLines="4" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnSend"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Send" android:layout_marginStart="8dp" />
+    </LinearLayout>
+</LinearLayout>

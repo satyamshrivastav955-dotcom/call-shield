@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">antAI</string>
+
+    <string-array name="relationship_tags">
+        <item>Mom</item>
+        <item>Dad</item>
+        <item>Son</item>
+        <item>Daughter</item>
+        <item>Grandma</item>
+        <item>Grandpa</item>
+        <item>Aunt</item>
+        <item>Uncle</item>
+        <item>Brother</item>
+        <item>Sister</item>
+        <item>Other</item>
+    </string-array>
+</resources>

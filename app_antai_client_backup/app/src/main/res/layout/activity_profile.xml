@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="20dp">
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Profile" android:textSize="24sp" android:textStyle="bold" />
+
+        <TextView android:id="@+id/tvPhone" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:paddingTop="4dp" android:textSize="13sp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Display name" android:paddingTop="20dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etName" android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnSave"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Save" />
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnEnrollVoice"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="🎤 Enroll my voiceprint" style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnSettings"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Server settings" style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnLogout"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Log out" android:backgroundTint="#DC2626" />
+    </LinearLayout>
+</ScrollView>

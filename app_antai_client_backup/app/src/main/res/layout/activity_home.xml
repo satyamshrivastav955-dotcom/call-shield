@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/surface">
+
+    <!-- WhatsApp-style header -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:paddingHorizontal="16dp" android:paddingTop="8dp" android:paddingBottom="8dp"
+        android:background="@color/wa_header" android:fitsSystemWindows="true">
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="antAI"
+            android:textSize="24sp" android:textStyle="bold" android:textColor="#FFFFFF" />
+
+        <ImageButton android:id="@+id/ivHistory" android:layout_width="48dp"
+            android:layout_height="48dp" android:src="@android:drawable/ic_menu_agenda"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="History and reports"
+            android:tint="#FFFFFF" />
+
+        <ImageButton android:id="@+id/ivProfile" android:layout_width="48dp"
+            android:layout_height="48dp" android:src="@android:drawable/ic_menu_myplaces"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Profile and settings"
+            android:tint="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- conversation list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvChats" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1" android:paddingTop="4dp" />
+
+    <!-- WhatsApp-style FAB for new chat -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabNewChat" android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:layout_gravity="end"
+        android:layout_margin="20dp" android:src="@android:drawable/ic_input_add"
+        android:contentDescription="New chat or call"
+        android:backgroundTint="@color/wa_accent"
+        android:tint="#FFFFFF" />
+</LinearLayout>

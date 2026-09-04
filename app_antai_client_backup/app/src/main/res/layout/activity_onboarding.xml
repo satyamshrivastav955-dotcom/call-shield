@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/surface" android:fillViewport="true">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:gravity="center_horizontal"
+        android:padding="28dp">
+
+        <!-- brand -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="antAI" android:textSize="44sp" android:textStyle="bold"
+            android:textColor="@color/teal_700" android:paddingTop="48dp" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Safe calls, video &amp; messages" android:textSize="18sp"
+            android:textColor="@color/text_secondary" android:paddingTop="4dp" />
+
+        <!-- Truecaller-style phone card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="48dp" style="@style/Widget.AntAI.BigTile"
+            android:foreground="?attr/selectableItemBackground">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="20dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Your phone number" android:textSize="14sp"
+                    android:textColor="@color/text_secondary" />
+                <EditText android:id="@+id/etPhone" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:inputType="phone"
+                    android:textSize="26sp" android:textStyle="bold"
+                    android:textColor="@color/text_primary" android:hint="+91 98765 43210"
+                    android:background="@null"
+                    android:paddingTop="4dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- name card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" style="@style/Widget.AntAI.BigTile">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="20dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Your name" android:textSize="14sp"
+                    android:textColor="@color/text_secondary" />
+                <EditText android:id="@+id/etName" android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:inputType="textPersonName"
+                    android:textSize="22sp" android:textColor="@color/text_primary"
+                    android:hint="e.g. Satya"
+                    android:background="@null" android:paddingTop="4dp" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- consent (README 8: disclosure, both parties) -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" style="@style/Widget.AntAI.BigTile">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:padding="16dp">
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cbConsent" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:textSize="15sp"
+                    android:textColor="@color/text_primary" android:layout_marginStart="8dp"
+                    android:text="I understand that calls and messages made through antAI are checked to protect me from scammers. This applies to everyone on the call." />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnContinue"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="24dp" android:text="Continue"
+            style="@style/Widget.AntAI.BigButton" android:backgroundTint="@color/teal_700" />
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Your data stays on your device. antAI only needs a number to connect you."
+            android:textSize="13sp" android:textColor="@color/text_secondary"
+            android:gravity="center" android:padding="16dp" />
+
+        <TextView android:id="@+id/tvServerUrl" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:textSize="13sp"
+            android:textColor="@color/text_secondary" android:gravity="center"
+            android:text="server: http://127.0.0.1:18765 (USB)" android:paddingBottom="8dp" />
+    </LinearLayout>
+</ScrollView>

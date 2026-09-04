@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/surface">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:paddingHorizontal="20dp" android:paddingTop="8dp" android:paddingBottom="8dp"
+        android:background="@color/ink" android:fitsSystemWindows="true">
+        <ImageButton android:id="@+id/btnBack" android:layout_width="52dp"
+            android:layout_height="52dp" android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Contacts"
+            android:textSize="24sp" android:textStyle="bold" android:textColor="#FFFFFF" />
+        <ImageButton android:id="@+id/btnAdd" android:layout_width="52dp"
+            android:layout_height="52dp" android:src="@android:drawable/ic_input_add"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Add a contact" />
+    </LinearLayout>
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:paddingLeft="16dp" android:paddingTop="8dp" android:paddingRight="16dp"
+        android:paddingBottom="16dp"
+        android:text="Long-press a contact to report it as a scammer."
+        android:textAppearance="@style/TextAppearance.AntAI.Hint" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvContacts" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1" />
+</LinearLayout>

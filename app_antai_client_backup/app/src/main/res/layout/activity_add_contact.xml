@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="20dp">
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Add contact" android:textSize="24sp" android:textStyle="bold" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Phone number" android:paddingTop="20dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etPhone" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:inputType="phone" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="Label (e.g. Mom, Bank)" android:paddingTop="12dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etLabel" android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Spinner android:id="@+id/spinnerTag" android:layout_width="match_parent"
+            android:layout_height="48dp" android:layout_marginTop="12dp"
+            android:entries="@array/relationship_tags" />
+
+        <com.google.android.material.checkbox.MaterialCheckBox android:id="@+id/cbTrusted"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Trusted circle member (can verify my calls)" android:layout_marginTop="8dp" />
+
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnSave"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Save contact" android:layout_marginTop="16dp" />
+    </LinearLayout>
+</ScrollView>

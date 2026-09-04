@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="#F8FAFC">
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="History" android:textSize="22sp" android:textStyle="bold"
+        android:textColor="#FFFFFF" android:background="@color/ink"
+        android:gravity="center_vertical" android:paddingHorizontal="20dp"
+        android:paddingTop="10dp" android:paddingBottom="10dp"
+        android:fitsSystemWindows="true" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:padding="8dp">
+        <com.google.android.material.chip.Chip android:id="@+id/chipVerdicts"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Verdicts" android:checkable="true" />
+        <com.google.android.material.chip.Chip android:id="@+id/chipReports"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Reports" android:checkable="true" />
+        <com.google.android.material.chip.Chip android:id="@+id/chipCalls"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Calls" android:checkable="true" />
+    </com.google.android.material.chip.ChipGroup>
+
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvVerdicts"
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvReports"
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:visibility="gone" />
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/rvCalls"
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:visibility="gone" />
+</LinearLayout>

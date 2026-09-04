@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="24dp" android:background="#F8FAFC">
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Server settings" android:textSize="22sp" android:textStyle="bold" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:hint="Server base URL" android:paddingTop="20dp">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etBaseUrl" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:inputType="textUri" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnSave"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Save" android:layout_marginTop="16dp" />
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnNotifications"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Protect my WhatsApp &amp; SMS notifications"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_marginTop="12dp" />
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnTestNotify"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Test scam notification detection"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_marginTop="12dp" />
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Turn on notification access so antAI can check incoming messages from WhatsApp, SMS and other apps for scams - and warn you in real time."
+        android:textSize="14sp" android:textColor="@color/text_secondary"
+        android:paddingTop="12dp" />
+</LinearLayout>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="#0B1220"
+    android:fitsSystemWindows="true">
+
+    <FrameLayout android:id="@+id/videoFrame" android:layout_width="match_parent"
+        android:layout_height="0dp" android:layout_weight="1" android:visibility="gone">
+
+        <org.webrtc.SurfaceViewRenderer android:id="@+id/remoteVideo"
+            android:layout_width="match_parent" android:layout_height="match_parent" />
+
+        <org.webrtc.SurfaceViewRenderer android:id="@+id/localVideo"
+            android:layout_width="120dp" android:layout_height="160dp"
+            android:layout_gravity="end|top" android:layout_margin="12dp" />
+    </FrameLayout>
+
+    <!-- caller identity (WhatsApp style) -->
+    <LinearLayout android:id="@+id/identityPanel"
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:orientation="vertical"
+        android:gravity="center" android:padding="24dp">
+        <TextView android:id="@+id/tvAvatar" android:layout_width="112dp"
+            android:layout_height="112dp" android:textSize="48sp" android:textStyle="bold"
+            android:textColor="#FFFFFF" android:gravity="center"
+            android:background="@drawable/bg_avatar" />
+        <TextView android:id="@+id/tvPeerName" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:textSize="30sp" android:textStyle="bold"
+            android:textColor="#FFFFFF" android:paddingTop="20dp" />
+        <TextView android:id="@+id/tvStatus" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:textSize="17sp"
+            android:textColor="#94A3B8" android:paddingTop="6dp" android:text="Connecting…" />
+    </LinearLayout>
+
+    <androidx.cardview.widget.CardView android:id="@+id/cardVerdict"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_margin="12dp" android:visibility="gone" app:cardCornerRadius="16dp">
+        <TextView android:id="@+id/tvVerdict" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:padding="16dp"
+            android:textSize="16sp" android:textColor="#FFFFFF" />
+    </androidx.cardview.widget.CardView>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center"
+        android:padding="12dp">
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnMute"
+                android:layout_width="64dp" android:layout_height="64dp"
+                android:text="🔊" android:textSize="26sp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:insetTop="0dp" android:insetBottom="0dp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Mute" android:textSize="13sp" android:textColor="#94A3B8"
+                android:paddingTop="4dp" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnSpeaker"
+                android:layout_width="64dp" android:layout_height="64dp"
+                android:text="🔉" android:textSize="26sp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:insetTop="0dp" android:insetBottom="0dp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Speaker" android:textSize="13sp" android:textColor="#94A3B8"
+                android:paddingTop="4dp" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnVerify"
+                android:layout_width="64dp" android:layout_height="64dp"
+                android:text="🛡" android:textSize="26sp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:insetTop="0dp" android:insetBottom="0dp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Verify" android:textSize="13sp" android:textColor="#94A3B8"
+                android:paddingTop="4dp" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnCamera"
+                android:layout_width="64dp" android:layout_height="64dp"
+                android:text="📷" android:textSize="26sp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:insetTop="0dp" android:insetBottom="0dp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Camera" android:textSize="13sp" android:textColor="#94A3B8"
+                android:paddingTop="4dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center" android:paddingBottom="28dp">
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnAccept"
+            android:layout_width="72dp" android:layout_height="72dp"
+            android:text="📞" android:textSize="30sp" android:backgroundTint="@color/safe"
+            android:visibility="gone" android:insetTop="0dp" android:insetBottom="0dp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnDecline"
+            android:layout_width="72dp" android:layout_height="72dp"
+            android:text="📵" android:textSize="26sp" android:backgroundTint="@color/danger"
+            android:visibility="gone" android:insetTop="0dp" android:insetBottom="0dp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnHangup"
+            android:layout_width="72dp" android:layout_height="72dp"
+            android:text="📵" android:textSize="26sp" android:backgroundTint="@color/danger"
+            android:insetTop="0dp" android:insetBottom="0dp" />
+    </LinearLayout>
+</LinearLayout>

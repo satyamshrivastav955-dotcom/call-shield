@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="20dp">
+        <TextView android:id="@+id/tvTitle" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:textSize="20sp" android:textStyle="bold" />
+        <TextView android:id="@+id/tvMeta" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:textSize="13sp" android:paddingTop="4dp" />
+        <TextView android:id="@+id/tvBody" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:textSize="15sp"
+            android:paddingTop="16dp" android:lineSpacingMultiplier="1.3" />
+    </LinearLayout>
+</ScrollView>
