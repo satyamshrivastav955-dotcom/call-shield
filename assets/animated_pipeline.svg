@@ -1,0 +1,282 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="100%" height="100%" style="background:#0b0f19; border-radius:14px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Background Grid -->
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#17223b" stroke-width="0.8" opacity="0.4"/>
+    </pattern>
+
+    <!-- Gradients -->
+    <linearGradient id="grad-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F5D4"/>
+      <stop offset="100%" stop-color="#00B4D8"/>
+    </linearGradient>
+    <linearGradient id="grad-purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9D4EDD"/>
+      <stop offset="100%" stop-color="#7928CA"/>
+    </linearGradient>
+    <linearGradient id="grad-red" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF3366"/>
+      <stop offset="100%" stop-color="#D90429"/>
+    </linearGradient>
+    <linearGradient id="grad-card" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#162035"/>
+      <stop offset="100%" stop-color="#0d1424"/>
+    </linearGradient>
+
+    <!-- Glow Filters -->
+    <filter id="glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="glow-red" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <!-- Animated Data Flow Style -->
+    <style>
+      .flow-path {
+        stroke-dasharray: 6, 8;
+        animation: dash 1.8s linear infinite;
+      }
+      .flow-pulse {
+        animation: pulse 2s ease-in-out infinite alternate;
+      }
+      .threat-alert {
+        animation: threatGlow 1.5s ease-in-out infinite alternate;
+      }
+      @keyframes dash {
+        to { stroke-dashoffset: -28; }
+      }
+      @keyframes pulse {
+        0% { opacity: 0.7; transform: scale(0.99); }
+        100% { opacity: 1; transform: scale(1.01); }
+      }
+      @keyframes threatGlow {
+        0% { filter: drop-shadow(0 0 2px #FF3366); }
+        100% { filter: drop-shadow(0 0 8px #FF0055); }
+      }
+    </style>
+  </defs>
+
+  <!-- Background Layer -->
+  <rect width="1000" height="520" fill="#0b0f19" rx="14"/>
+  <rect width="1000" height="520" fill="url(#grid)" rx="14"/>
+
+  <!-- Pipeline Header -->
+  <g transform="translate(30, 24)">
+    <circle cx="10" cy="10" r="6" fill="#00F5D4" filter="url(#glow-cyan)"/>
+    <text x="24" y="15" fill="#E2E8F0" font-size="16" font-weight="700" letter-spacing="0.5">antAI REAL-TIME DEFENSE PIPELINE</text>
+    <text x="320" y="15" fill="#64748B" font-size="13" font-weight="500">Autonomous 14-Node LangGraph State Machine &amp; Multi-Signal Intercept</text>
+    <rect x="830" y="0" width="110" height="24" rx="12" fill="#132338" stroke="#00F5D4" stroke-width="1"/>
+    <circle cx="842" cy="12" r="4" fill="#00E676"/>
+    <text x="852" y="16" fill="#00F5D4" font-size="11" font-weight="600">SUB-SECOND</text>
+  </g>
+
+  <!-- ==================== COLUMN 1: INGESTION ==================== -->
+  <g transform="translate(30, 70)">
+    <rect width="210" height="420" rx="10" fill="url(#grad-card)" stroke="#1E293B" stroke-width="1.5"/>
+    <rect x="0" y="0" width="210" height="34" rx="10" fill="#111B2E"/>
+    <text x="16" y="22" fill="#38BDF8" font-size="12" font-weight="700" letter-spacing="1">1. MULTI-SOURCE INGESTION</text>
+
+    <!-- Source 1: Android VoIP/Video -->
+    <g transform="translate(12, 48)">
+      <rect width="186" height="74" rx="8" fill="#152238" stroke="#253554" stroke-width="1"/>
+      <circle cx="20" cy="22" r="10" fill="#00F5D4" opacity="0.15"/>
+      <text x="16" y="26" fill="#00F5D4" font-size="13">📱</text>
+      <text x="36" y="22" fill="#F1F5F9" font-size="12" font-weight="600">Android Client</text>
+      <text x="36" y="38" fill="#94A3B8" font-size="10">WebRTC P2P + SFU /ws/tap</text>
+      <rect x="36" y="46" width="138" height="18" rx="4" fill="#0D1626"/>
+      <text x="42" y="58" fill="#00F5D4" font-size="9" font-weight="600">Send-Only Media Tap</text>
+    </g>
+
+    <!-- Source 2: Windows Client -->
+    <g transform="translate(12, 134)">
+      <rect width="186" height="74" rx="8" fill="#152238" stroke="#253554" stroke-width="1"/>
+      <circle cx="20" cy="22" r="10" fill="#38BDF8" opacity="0.15"/>
+      <text x="16" y="26" fill="#38BDF8" font-size="13">💻</text>
+      <text x="36" y="22" fill="#F1F5F9" font-size="12" font-weight="600">Windows Desktop HUD</text>
+      <text x="36" y="38" fill="#94A3B8" font-size="10">16kHz Mic PCM → /api/stream/ws</text>
+      <rect x="36" y="46" width="138" height="18" rx="4" fill="#0D1626"/>
+      <text x="42" y="58" fill="#38BDF8" font-size="9" font-weight="600">Teams / Zoom / Meet Tapping</text>
+    </g>
+
+    <!-- Source 3: SMS & Notifications -->
+    <g transform="translate(12, 220)">
+      <rect width="186" height="74" rx="8" fill="#152238" stroke="#253554" stroke-width="1"/>
+      <circle cx="20" cy="22" r="10" fill="#FFB800" opacity="0.15"/>
+      <text x="16" y="26" fill="#FFB800" font-size="13">💬</text>
+      <text x="36" y="22" fill="#F1F5F9" font-size="12" font-weight="600">SMS &amp; Notification Guard</text>
+      <text x="36" y="38" fill="#94A3B8" font-size="10">BroadcastReceiver / Listener</text>
+      <rect x="36" y="46" width="138" height="18" rx="4" fill="#0D1626"/>
+      <text x="42" y="58" fill="#FFB800" font-size="9" font-weight="600">WhatsApp / Telegram / Bank</text>
+    </g>
+
+    <!-- Feature Sampler & VAD -->
+    <g transform="translate(12, 306)">
+      <rect width="186" height="98" rx="8" fill="#13233A" stroke="#00F5D4" stroke-width="1.2" stroke-dasharray="3,3"/>
+      <text x="12" y="20" fill="#00F5D4" font-size="11" font-weight="700">PRE-PROCESSING LAYER</text>
+      <text x="12" y="40" fill="#E2E8F0" font-size="10">• Silero-VAD 512-Window (Voice Cut)</text>
+      <text x="12" y="58" fill="#E2E8F0" font-size="10">• Deepgram Nova-2 / Faster-Whisper</text>
+      <text x="12" y="76" fill="#E2E8F0" font-size="10">• MediaPipe 6 FPS Video Sampler</text>
+    </g>
+  </g>
+
+  <!-- Connectors: Ingestion to LangGraph -->
+  <path d="M 240 155 L 290 155" fill="none" stroke="#00F5D4" stroke-width="2" class="flow-path"/>
+  <path d="M 240 241 L 290 241" fill="none" stroke="#38BDF8" stroke-width="2" class="flow-path"/>
+  <path d="M 240 327 L 290 327" fill="none" stroke="#FFB800" stroke-width="2" class="flow-path"/>
+
+  <!-- ==================== COLUMN 2: 14-NODE LANGGRAPH DAG ==================== -->
+  <g transform="translate(290, 70)">
+    <rect width="300" height="420" rx="10" fill="url(#grad-card)" stroke="#7928CA" stroke-width="1.5"/>
+    <rect x="0" y="0" width="300" height="34" rx="10" fill="#1A1230"/>
+    <text x="16" y="22" fill="#C084FC" font-size="12" font-weight="700" letter-spacing="1">2. 14-NODE LANGGRAPH AGENTIC DAG</text>
+
+    <!-- Router Node -->
+    <g transform="translate(14, 46)">
+      <rect width="272" height="30" rx="6" fill="#241442" stroke="#9D4EDD" stroke-width="1"/>
+      <text x="12" y="19" fill="#E9D5FF" font-size="11" font-weight="700">🔀 router_node : Dynamic Branch (Voice / Text / Video)</text>
+    </g>
+
+    <!-- 3 Parallel Model Tiers -->
+    <!-- Tier A: Acoustic & Biometrics -->
+    <g transform="translate(14, 86)">
+      <rect width="272" height="74" rx="6" fill="#181B34" stroke="#4C1D95" stroke-width="1"/>
+      <text x="10" y="18" fill="#FF5376" font-size="10" font-weight="700">🔴 HARD SIGNALS (ACOUSTIC &amp; BIOMETRIC)</text>
+      <text x="10" y="36" fill="#E2E8F0" font-size="10">• AST-ASVspoof5 + wav2vec2 SSL Ensemble</text>
+      <text x="10" y="52" fill="#E2E8F0" font-size="10">• ECAPA-TDNN Speaker Voiceprint Mismatch</text>
+      <rect x="186" y="52" width="76" height="16" rx="3" fill="#3B0764"/>
+      <text x="192" y="64" fill="#F43F5E" font-size="9" font-weight="700">Max +60 Impact</text>
+    </g>
+
+    <!-- Tier B: Computer Vision Face Synthesis -->
+    <g transform="translate(14, 168)">
+      <rect width="272" height="66" rx="6" fill="#181B34" stroke="#4C1D95" stroke-width="1"/>
+      <text x="10" y="18" fill="#F43F5E" font-size="10" font-weight="700">📹 VISION &amp; PHONATION LAYER</text>
+      <text x="10" y="36" fill="#E2E8F0" font-size="10">• DeepfakeDet-ViT (CVPR 2025) + DiCoME CLIP</text>
+      <text x="10" y="52" fill="#E2E8F0" font-size="10">• AV Lip-Sync &amp; MediaPipe FaceMesh</text>
+    </g>
+
+    <!-- Tier C: NLP & Behavioral Urgency -->
+    <g transform="translate(14, 242)">
+      <rect width="272" height="78" rx="6" fill="#181B34" stroke="#4C1D95" stroke-width="1"/>
+      <text x="10" y="18" fill="#FBBF24" font-size="10" font-weight="700">🟡 SOFT SIGNALS (NLP &amp; COERCION SCORING)</text>
+      <text x="10" y="36" fill="#E2E8F0" font-size="10">• Multilingual DistilBERT 8-Class Scam Classifier</text>
+      <text x="10" y="52" fill="#E2E8F0" font-size="10">• Psychological Urgency &amp; Panic Scorer</text>
+      <text x="10" y="68" fill="#E2E8F0" font-size="10">• MiniLM-L12-v2 Behavioral Register Drift</text>
+    </g>
+
+    <!-- Intelligence Ledger -->
+    <g transform="translate(14, 328)">
+      <rect width="272" height="42" rx="6" fill="#162038" stroke="#2563EB" stroke-width="1"/>
+      <text x="10" y="18" fill="#60A5FA" font-size="10" font-weight="700">🌐 SHA-256 COMMUNITY FRAUD LEDGER</text>
+      <text x="10" y="34" fill="#93C5FD" font-size="9">Collective intelligence check on hashed caller numbers</text>
+    </g>
+
+    <!-- LLM Reasoning Node -->
+    <g transform="translate(14, 378)">
+      <rect width="272" height="32" rx="6" fill="#2E1065" stroke="#A855F7" stroke-width="1.2"/>
+      <text x="10" y="20" fill="#E9D5FF" font-size="10" font-weight="700">🧠 llm_reasoning_node : Plain-Language Synthesis</text>
+    </g>
+  </g>
+
+  <!-- Connectors: LangGraph to Fusion -->
+  <path d="M 590 280 L 630 280" fill="none" stroke="#A855F7" stroke-width="2.5" class="flow-path"/>
+
+  <!-- ==================== COLUMN 3: FUSION MATRIX ==================== -->
+  <g transform="translate(630, 70)">
+    <rect width="160" height="420" rx="10" fill="url(#grad-card)" stroke="#00E676" stroke-width="1.5"/>
+    <rect x="0" y="0" width="160" height="34" rx="10" fill="#0C261E"/>
+    <text x="12" y="22" fill="#00E676" font-size="11" font-weight="700" letter-spacing="0.5">3. CALIBRATED FUSION</text>
+
+    <!-- Fusion Logic Display -->
+    <g transform="translate(10, 48)">
+      <rect width="140" height="90" rx="6" fill="#0F1F1E" stroke="#00E676" stroke-width="1"/>
+      <text x="10" y="20" fill="#4ADE80" font-size="11" font-weight="700">DEAD-ZONE GUARD</text>
+      <text x="10" y="38" fill="#CBD5E1" font-size="9">Soft Cap: max 39</text>
+      <text x="10" y="52" fill="#CBD5E1" font-size="9">(Zero False Alarms)</text>
+      <text x="10" y="70" fill="#00E676" font-size="9" font-weight="700">Requires ≥2 Soft</text>
+      <text x="10" y="82" fill="#00E676" font-size="9" font-weight="700">OR 1 Hard Signal</text>
+    </g>
+
+    <!-- Score Bands -->
+    <g transform="translate(10, 150)">
+      <!-- Band 1: Safe -->
+      <rect width="140" height="44" rx="6" fill="#064E3B" stroke="#059669" stroke-width="1"/>
+      <text x="10" y="18" fill="#6EE7B7" font-size="10" font-weight="700">0 - 39: PASSIVE</text>
+      <text x="10" y="34" fill="#A7F3D0" font-size="8.5">Normal benign calls</text>
+
+      <!-- Band 2: Review -->
+      <g transform="translate(0, 52)">
+        <rect width="140" height="44" rx="6" fill="#713F12" stroke="#D97706" stroke-width="1"/>
+        <text x="10" y="18" fill="#FDE68A" font-size="10" font-weight="700">40 - 69: REVIEW</text>
+        <text x="10" y="34" fill="#FEF3C7" font-size="8.5">Elevated risk / caution</text>
+      </g>
+
+      <!-- Band 3: Critical -->
+      <g transform="translate(0, 104)" class="threat-alert">
+        <rect width="140" height="52" rx="6" fill="#7F1D1D" stroke="#EF4444" stroke-width="1.5"/>
+        <text x="10" y="20" fill="#FCA5A5" font-size="11" font-weight="800">70 - 100: CRITICAL</text>
+        <text x="10" y="36" fill="#FECACA" font-size="8.5">Autonomous Intercept</text>
+        <text x="10" y="46" fill="#F87171" font-size="8.5" font-weight="700">Active Freeze Trigger</text>
+      </g>
+    </g>
+
+    <!-- Latency Counter -->
+    <g transform="translate(10, 350)">
+      <rect width="140" height="54" rx="6" fill="#131C2E" stroke="#1E293B" stroke-width="1"/>
+      <text x="10" y="20" fill="#94A3B8" font-size="9" font-weight="600">INFERENCE LATENCY</text>
+      <text x="10" y="40" fill="#00F5D4" font-size="18" font-weight="800">&lt; 850 ms</text>
+    </g>
+  </g>
+
+  <!-- Connectors: Fusion to Intercept -->
+  <path d="M 790 280 L 830 280" fill="none" stroke="#FF3366" stroke-width="2.5" class="flow-path"/>
+
+  <!-- ==================== COLUMN 4: ACTIVE INTERCEPT & HUD ==================== -->
+  <g transform="translate(830, 70)">
+    <rect width="140" height="420" rx="10" fill="url(#grad-card)" stroke="#FF3366" stroke-width="1.5"/>
+    <rect x="0" y="0" width="140" height="34" rx="10" fill="#2E0E18"/>
+    <text x="10" y="22" fill="#FF5376" font-size="11" font-weight="700" letter-spacing="0.5">4. ACTIVE DEFENSE</text>
+
+    <!-- Intercept Action 1 -->
+    <g transform="translate(8, 48)">
+      <rect width="124" height="80" rx="6" fill="#1F1524" stroke="#FF0055" stroke-width="1"/>
+      <text x="8" y="18" fill="#FF5376" font-size="10" font-weight="700">🛑 AUTONOMOUS</text>
+      <text x="8" y="30" fill="#FF5376" font-size="10" font-weight="700">FREEZE MODAL</text>
+      <text x="8" y="48" fill="#CBD5E1" font-size="8.5">• 60s Hold on OTP</text>
+      <text x="8" y="60" fill="#CBD5E1" font-size="8.5">• Transfer Lock</text>
+      <text x="8" y="72" fill="#00F5D4" font-size="8.5" font-weight="600">Conscious Override</text>
+    </g>
+
+    <!-- Intercept Action 2 -->
+    <g transform="translate(8, 138)">
+      <rect width="124" height="74" rx="6" fill="#1F1524" stroke="#9333EA" stroke-width="1"/>
+      <text x="8" y="18" fill="#D8B4FE" font-size="10" font-weight="700">🛡️ AiInsightWindow</text>
+      <text x="8" y="34" fill="#CBD5E1" font-size="8.5">• Live In-Call HUD</text>
+      <text x="8" y="48" fill="#CBD5E1" font-size="8.5">• Streaming ASR</text>
+      <text x="8" y="62" fill="#CBD5E1" font-size="8.5">• Plain-Language AI</text>
+    </g>
+
+    <!-- Intercept Action 3 -->
+    <g transform="translate(8, 222)">
+      <rect width="124" height="74" rx="6" fill="#1F1524" stroke="#38BDF8" stroke-width="1"/>
+      <text x="8" y="18" fill="#7DD3FC" font-size="10" font-weight="700">💻 WINDOWS HUD</text>
+      <text x="8" y="34" fill="#CBD5E1" font-size="8.5">• Always-On-Top Arc</text>
+      <text x="8" y="48" fill="#CBD5E1" font-size="8.5">• Toast Notifications</text>
+      <text x="8" y="62" fill="#CBD5E1" font-size="8.5">• Zoom/Teams Shield</text>
+    </g>
+
+    <!-- Intercept Action 4 -->
+    <g transform="translate(8, 306)">
+      <rect width="124" height="96" rx="6" fill="#1F1524" stroke="#00E676" stroke-width="1"/>
+      <text x="8" y="18" fill="#86EFAC" font-size="10" font-weight="700">👨‍👩‍👧 TRUSTED CIRCLE</text>
+      <text x="8" y="34" fill="#CBD5E1" font-size="8.5">• 1-Tap Out-of-Band</text>
+      <text x="8" y="48" fill="#CBD5E1" font-size="8.5">  Family Verification</text>
+      <text x="8" y="64" fill="#00E676" font-size="8.5" font-weight="700">"Mom, are you really</text>
+      <text x="8" y="76" fill="#00E676" font-size="8.5" font-weight="700">on call with John?"</text>
+      <text x="8" y="88" fill="#94A3B8" font-size="8">Cross-Device Check</text>
+    </g>
+  </g>
+</svg>
