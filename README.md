@@ -5,15 +5,14 @@
 
 <!-- Animated Typing Banner -->
 <a href="#">
-  <img src="https://readme-typing-svg.demolab.com?font=Space+Grotesk&weight=700&size=26&duration=2500&pause=1000&color=00F5D4&center=true&vCenter=true&multiline=false&width=860&height=65&lines=%F0%9F%9B%A1%EF%B8%8F+Victim-Side+Scam+%26+Deepfake+Defense;%F0%9F%8E%99%EF%B8%8F+AI+Voice+Clone+%26+Face+Synthesis+Interception;%E2%9A%A1+Autonomous+14-Node+LangGraph+DAG+Orchestrator;%F0%9F%9B%91+Active+Protection%3A+Freeze%2C+Verify+%26+Plain-Language+AI;%F0%9F%91%A8%E2%80%8D%F0%9F%91%A9%E2%80%8D%F0%9F%91%A7+Team+kala+dhua+%7C+Track%3A+NewGenAI+%7C+PS%3A02.06" alt="antAI Dynamic Typing Banner" />
+  <img src="https://readme-typing-svg.demolab.com?font=Space+Grotesk&weight=700&size=26&duration=2500&pause=1000&color=00F5D4&center=true&vCenter=true&multiline=false&width=860&height=65&lines=%F0%9F%9B%A1%EF%B8%8F+Victim-Side+Scam+%26+Deepfake+Defense;%F0%9F%8E%99%EF%B8%8F+AI+Voice+Clone+%26+Face+Synthesis+Interception;%E2%9A%A1+Autonomous+14-Node+LangGraph+DAG+Orchestrator;%F0%9F%9B%91+Active+Protection%3A+Freeze%2C+Verify+%26+Plain-Language+AI;%F0%9F%94%90+Privacy-First+Zero-Retention+Biometrics" alt="antAI Dynamic Typing Banner" />
 </a>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Team-kala__dhua-FFD700?style=for-the-badge&logo=github&logoColor=black" alt="Team kala dhua"/>
-  <img src="https://img.shields.io/badge/Track-NewGenAI-FF007F?style=for-the-badge&logo=sparkles&logoColor=white" alt="Track NewGenAI"/>
-  <img src="https://img.shields.io/badge/Problem__Statement-PS%3A02.06-00E676?style=for-the-badge&logo=target&logoColor=black" alt="PS:02.06"/>
-  <img src="https://img.shields.io/badge/Tests-10%2F10%20PASSED-00F5D4?style=for-the-badge&logo=pytest&logoColor=black" alt="Pytest Tests Passed"/>
-  <img src="https://img.shields.io/badge/Status-Active%20%26%20Protected-00E676?style=for-the-badge&logo=shield&logoColor=black" alt="Status"/>
+  <img src="https://img.shields.io/badge/Architecture-Victim--Side%20Active%20Defense-00F5D4?style=for-the-badge&logo=shield&logoColor=black" alt="Architecture"/>
+  <img src="https://img.shields.io/badge/Inference-Sub--Second%20Realtime-7928CA?style=for-the-badge&logo=lightning&logoColor=white" alt="Inference"/>
+  <img src="https://img.shields.io/badge/Tests-10%2F10%20PASSED-00E676?style=for-the-badge&logo=pytest&logoColor=black" alt="Pytest Tests Passed"/>
+  <img src="https://img.shields.io/badge/Status-Production--Grade-38BDF8?style=for-the-badge&logo=statuspage&logoColor=black" alt="Status"/>
 </p>
 
 <p align="center">
@@ -408,7 +407,7 @@ $$R = \min\left(100, \; \sum_{i} w_i \cdot S_{\text{hard}, i} \;+\; \min\left(39
 ---
 
 <details>
-<summary><b>🇮🇳 Deep Dive 3: Multilingual & Regional Accent Evaluation (SIH P1.8)</b></summary>
+<summary><b>🇮🇳 Deep Dive 3: Multilingual & Regional Accent Evaluation & Benchmarks</b></summary>
 
 <br/>
 
@@ -471,13 +470,13 @@ Evaluated on 1,200 synthesized and real anonymized transcripts across Indian Eng
 ---
 
 <details>
-<summary><b>📋 Deep Dive 5: SIH PS26104 15-Requirement Compliance Matrix</b></summary>
+<summary><b>📋 Deep Dive 5: Core Defense Engineering & Capability Matrix</b></summary>
 
 <br/>
 
-Every requirement has been audited and verified against actual repository code:
+Every capability has been audited and verified against actual repository code:
 
-| # | SIH PS26104 Requirement | Status | Implementation Evidence |
+| # | System Capability & Defense Requirement | Status | Implementation Evidence |
 |---|---|:---:|---|
 | 1 | **Acoustic Synthesis Artifacts** | ✅ **VERIFIED** | Local SSL ensemble: AST-ASVspoof5 + wav2vec2 cross-check (`inference/voice/deepfake_voice.py`) |
 | 2 | **Prosody / Behavioral Drift** | ✅ **VERIFIED** | Sentence-Transformers MiniLM semantic drift + psychological urgency scorer |
@@ -540,7 +539,7 @@ antAI/
 │   ├── animated_pipeline.svg                 # High-tech animated SVG architecture pipeline
 │   ├── terminal_card.svg                     # Animated live terminal execution card
 │   └── screenshots/                          # 5 authentic production Android app screenshots
-└── 📚 docs/                                   # Architecture blueprints, setup manuals & SIH evaluation
+└── 📚 docs/                                   # Architecture blueprints, setup manuals & evaluation benchmarks
 ```
 
 </details>
@@ -556,12 +555,10 @@ antAI/
 
 ---
 
-## 👥 Hackathon Context & Metadata
+## 🎯 Purpose & Target Audience
 
-- **Team Name**: `kala dhua`
-- **Track**: `NewGenAI`
-- **Problem Statement ID**: `PS:02.06` (*Real-Time Scam and Impersonation Defense*)
-- **Target Audience**: Vulnerable individuals, elderly family members, and households safeguarding against AI-driven social engineering.
+- **Designed For**: Individuals, vulnerable family members, and households safeguarding personal communications against AI-driven voice cloning, deepfake video calls, and social engineering fraud.
+- **Deployment**: Fully self-hostable with local GPU/CPU inference support (offline zero-cost mode) or cloud-accelerated endpoints.
 
 <div align="center">
 
