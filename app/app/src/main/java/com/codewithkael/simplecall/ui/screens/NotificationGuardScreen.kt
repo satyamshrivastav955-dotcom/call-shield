@@ -38,7 +38,8 @@ import com.codewithkael.simplecall.utils.TimeFormat
 @Composable
 fun NotificationGuardScreen(
     vm: MessagesViewModel,
-    onOpenVoiceprint: () -> Unit = {}
+    onOpenVoiceprint: () -> Unit = {},
+    onOpenShield: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val notifications by vm.notifications.collectAsState()
@@ -57,6 +58,8 @@ fun NotificationGuardScreen(
         }
 
         VoiceprintEntryCard(onOpen = onOpenVoiceprint)
+
+        com.codewithkael.simplecall.shield.ShieldEntryCard(onOpen = onOpenShield)
 
         if (notifications.isEmpty()) {
             EmptyGuard(accessGranted)

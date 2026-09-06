@@ -73,6 +73,7 @@ fun HomeScreen() {
     // set up once and then only revisited occasionally, so it doesn't earn
     // permanent space in the bottom bar.
     var showVoiceprint by rememberSaveable { mutableStateOf(false) }
+    var showShield by rememberSaveable { mutableStateOf(false) }
 
     // A call must always be visible: pull the user to the Calls tab (which hosts
     // the incoming-call UI and the live call surface) whenever one is happening.
@@ -118,6 +119,9 @@ fun HomeScreen() {
     }
     BackHandler(enabled = tab == HomeTab.GUARD && showVoiceprint) {
         showVoiceprint = false
+    }
+    BackHandler(enabled = tab == HomeTab.GUARD && showShield) {
+        showShield = false
     }
 
     val riskyConvos = conversations.count {
@@ -204,11 +208,16 @@ fun HomeScreen() {
                 }
 
                 HomeTab.GUARD -> {
-                    if (!loggedIn) PhoneLoginScreen(messagesVm)
+                    // Shield is fully on-device: no login needed.
+                    if (showShield) com.codewithkael.simplecall.shield.ShieldScreen(
+                        onBack = { showShield = false },
+                    )
+                    else if (!loggedIn) PhoneLoginScreen(messagesVm)
                     else if (showVoiceprint) VoiceprintScreen(onBack = { showVoiceprint = false })
                     else NotificationGuardScreen(
                         vm = messagesVm,
-                        onOpenVoiceprint = { showVoiceprint = true }
+                        onOpenVoiceprint = { showVoiceprint = true },
+                        onOpenShield = { showShield = true },
                     )
                 }
 
