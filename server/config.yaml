@@ -105,6 +105,10 @@ pipeline:
   # reaches voice_alert_threshold. Raise for accuracy, lower for latency; 0
   # disables the window and scores the raw segment.
   voice_window_s: 4.0
+  # Long unpadded context for the AST spoof head (padded short windows read as
+  # spoof to it; measured 2026-09-06). Requires the rolling voice buffer to
+  # hold at least this much (dispatcher keeps 20s).
+  voice_long_window_s: 10.0
   video_alert_threshold: 0.95       # deepfake-video prob above this -> pause + popup
   deepfake_alert_cooldown_s: 15.0   # min seconds between alerts (per source)
 

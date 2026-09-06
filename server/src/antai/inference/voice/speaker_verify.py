@@ -31,9 +31,13 @@ class SpeakerVerifyEngine(BaseEngine):
             return False
         try:
             from speechbrain.inference.speaker import EncoderClassifier
-            self.model = EncoderClassifier.from_hparams(
-                source="speechbrain/spkrec-ecapa-voxceleb", savedir=str(savedir))
             self.device = self._device_for()
+            # speechbrain needs an indexed device string ("cuda:0"); bare
+            # "cuda" fails its parser and silently falls back.
+            sb_device = (self.device + ":0") if self.device == "cuda" else self.device
+            self.model = EncoderClassifier.from_hparams(
+                source="speechbrain/spkrec-ecapa-voxceleb", savedir=str(savedir),
+                run_opts={"device": sb_device})
             return True
         except Exception as e:
             log.warning("speaker verify load failed: %s", e)

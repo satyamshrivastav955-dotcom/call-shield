@@ -254,12 +254,17 @@ class VoiceDeepfakeEngine(BaseEngine):
         self._velma_last_error = None
         return prob
 
-    def analyze(self, audio: np.ndarray, sample_rate: int = 16000) -> dict:
+    def analyze(self, audio: np.ndarray, sample_rate: int = 16000,
+                context_audio: np.ndarray | None = None) -> dict:
         """Returns {spoof_prob, label, per_model, ready, backend, sources}.
 
         In "both" mode the hosted API and the local ensemble are both scored and
         combined by `_combine`. In "velma" mode the local ensemble is only run
         when Velma produced nothing, so a working key costs no extra compute.
+
+        ``context_audio`` is the longer unpadded context for the AST head (see
+        ``voice_long_window_s``): padded short windows read as spoof to AST, so
+        it must see seconds of real speech. Falls back to ``audio`` when absent.
         """
         if not self.ready():
             return {"spoof_prob": None, "label": None, "per_model": {},
@@ -268,7 +273,8 @@ class VoiceDeepfakeEngine(BaseEngine):
         velma_p = self._velma_score(audio, sample_rate)
         local: dict | None = None
         if self._use_local and (self._mode == "both" or velma_p is None):
-            local = self._analyze_local(audio, sample_rate)
+            local = self._analyze_local(audio, sample_rate,
+                                        context_audio=context_audio)
         return self._combine(velma_p, local)
 
     def _combine(self, velma_p: float | None, local: dict | None) -> dict:
@@ -336,7 +342,8 @@ class VoiceDeepfakeEngine(BaseEngine):
                 "ready": True, "backend": self.backend,
                 "sources": len(scores), "agreement": agreement}
 
-    def _analyze_local(self, audio: np.ndarray, sample_rate: int) -> dict:
+    def _analyze_local(self, audio: np.ndarray, sample_rate: int,
+                       context_audio: np.ndarray | None = None) -> dict:
         if not self._local_ready:
             return {"spoof_prob": None, "label": None, "per_model": {},
                     "ready": False, "backend": "none"}
@@ -344,7 +351,14 @@ class VoiceDeepfakeEngine(BaseEngine):
         try:
             per: dict[str, float] = {}
             for m in self._models:
-                inputs = m["processor"](audio, sampling_rate=sample_rate,
+                # AST saturates on zero-padded short windows (measured: 4s/8s
+                # padded -> spoof 1.0 on silence AND speech; full ~10s context
+                # -> sane). It therefore scores the long context; every other
+                # head keeps the short rolling window.
+                clip = (context_audio if (m["name"] == "asv5"
+                                          and context_audio is not None)
+                        else audio)
+                inputs = m["processor"](clip, sampling_rate=sample_rate,
                                         return_tensors="pt")
                 if self._local_device == "cuda":
                     inputs = {k: (v.half() if v.dtype == torch.float32 else v)

@@ -87,10 +87,16 @@ async def voice_detector_node(state: AnalysisState) -> AnalysisState:
     hub = get_hub()
     if audio and audio.get("audio") is not None:
         sr = audio.get("sample_rate", 16000)
+        # Long unpadded context for the AST head (padded short windows read as
+        # spoof to it); falls back to the window inside analyze() when absent.
+        long_audio = state.get("detector_audio_long")
+        context = (long_audio.get("audio")
+                   if long_audio and long_audio.get("audio") is not None else None)
         dfa = hub.get("voice_deepfake")
         if dfa and dfa.ready():
             r = await _safe("voice_deepfake.analyze",
-                            asyncio.to_thread(dfa.analyze, audio["audio"], sr))
+                            asyncio.to_thread(dfa.analyze, audio["audio"], sr,
+                                              context))
             if r is not None:
                 state["voice_deepfake"] = r.get("spoof_prob")
                 state["voice_per_model"] = r.get("per_model") or {}

@@ -24,6 +24,9 @@ class AnalysisState(TypedDict, total=False):
     # ECAPA speaker verification). Falls back to pending_audio when absent.
     # Kept separate because lip-sync must keep the raw, frame-aligned segment.
     detector_audio: Optional[dict]     # {speaker_id, audio, sample_rate}
+    # Longer (unpadded) context of the same speaker for the AST spoof head,
+    # which misfires on zero-padded short windows. Falls back to detector_audio.
+    detector_audio_long: Optional[dict]  # {speaker_id, audio, sample_rate}
     pending_frames: list[Any]          # recent BGR frames (small batch)
     claimed_identity_id: Optional[int]  # contact whose identity is claimed
     collective_phone_hash: Optional[str]  # caller phone hash for collective-db lookup

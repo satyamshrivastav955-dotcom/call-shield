@@ -322,8 +322,8 @@ class SessionRunner:
         except Exception:
             log.debug("voice buffer append skipped", exc_info=True)
 
-    def detector_window(self, speaker_id: int) -> tuple:
-        """The last ~`voice_window_s` seconds of ONE speaker's speech, and its sr.
+    def detector_window(self, speaker_id: int, seconds: float | None = None) -> tuple:
+        """The last ~N seconds of ONE speaker's speech, and its sr.
 
         Why the synthetic-voice detectors don't just score the segment they were
         handed: VAD segments are 0.4-2.0s because that keeps the live transcript
@@ -342,7 +342,8 @@ class SessionRunner:
         sr = max(1, self._voice_buf_sr)
         if not buf:
             return None, sr
-        want = int(max(0.0, get_config().pipeline.voice_window_s) * sr)
+        span = get_config().pipeline.voice_window_s if seconds is None else seconds
+        want = int(max(0.0, span) * sr)
         if want <= 0:                     # window disabled in config
             return buf[-1], sr
         chunks: list[np.ndarray] = []
@@ -505,6 +506,17 @@ class SessionRunner:
                     state["detector_audio"] = {"speaker_id": speaker_id,
                                                "audio": win,
                                                "sample_rate": win_sr}
+                # Long unpadded context for the AST head (see
+                # voice_long_window_s): padded short windows read as spoof.
+                try:
+                    long_s = float(get_config().pipeline.voice_long_window_s)
+                except Exception:
+                    long_s = 10.0
+                win_long, _ = self.detector_window(speaker_id, seconds=long_s)
+                if win_long is not None and len(win_long):
+                    state["detector_audio_long"] = {
+                        "speaker_id": speaker_id, "audio": win_long,
+                        "sample_rate": win_sr}
                 self._audio_segments += 1
                 state["claimed_identity_id"] = self._detect_identity_claim(text)
                 self._schedule_evaluate(state)
@@ -625,6 +637,8 @@ class SessionRunner:
                 # near-chance scores this window exists to avoid.
                 if prev.get("detector_audio"):
                     state["detector_audio"] = prev["detector_audio"]
+                if prev.get("detector_audio_long"):
+                    state["detector_audio_long"] = prev["detector_audio_long"]
             if not state.get("pending_frames") and prev.get("pending_frames"):
                 state["pending_frames"] = prev["pending_frames"]
         self._pending_state = state

@@ -244,6 +244,14 @@ class PipelineConfig:
     # deliberately keeps using the raw segment: splicing across silences would
     # de-align the audio envelope from the video frames.
     voice_window_s: float = 4.0
+    # Longer context for the AST spoof head ONLY. Measured 2026-09-06: the AST
+    # checkpoint treats zero-PADDED input as spoof evidence (4s/8s padded
+    # windows score 1.0 on silence, real voice AND clones alike), while a full
+    # unpadded ~10s context scores sanely. So AST gets up to this many seconds
+    # (processor truncates to its 1024-frame / ~10.24s native span); the
+    # wav2vec2 cross-check keeps the short voice_window_s. Requires the rolling
+    # voice buffer to hold at least this much (dispatcher._voice_buf_max_s).
+    voice_long_window_s: float = 10.0
     video_alert_threshold: float = 0.85
     deepfake_alert_cooldown_s: float = 15.0
 
