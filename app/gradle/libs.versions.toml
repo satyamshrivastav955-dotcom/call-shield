@@ -15,6 +15,7 @@ lifecycleViewModelCompose = "2.8.7"
 hiltNavigationCompose = "1.2.0"
 webSocket = "1.5.3"
 coroutines = "1.8.1"
+onnxruntime = "1.20.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,6 +40,7 @@ androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "l
 hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 websocket = { group = "org.java-websocket", name = "Java-WebSocket", version.ref = "webSocket" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+onnxruntime-android = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxruntime" }
 
 
 [plugins]

@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.websocket)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.onnxruntime.android)
     implementation(libs.gson)
     implementation(libs.webrtc)
     implementation(libs.hilt.android)
