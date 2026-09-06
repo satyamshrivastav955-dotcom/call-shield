@@ -1,0 +1,210 @@
+/* antAI popup — same palette as the HUD and the Android app. */
+
+body {
+  width: 300px;
+  margin: 0;
+  padding: 12px;
+  background: #1a1d23;
+  color: #f3f4f6;
+  font-family: "Segoe UI", Roboto, system-ui, sans-serif;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.logo {
+  color: #0e7c7b;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.models {
+  font-size: 10px;
+}
+
+.models.ok { color: #16a34a; }
+.models.warn { color: #ca8a04; }
+.models.na { color: #6b7280; }
+
+.status-line {
+  font-size: 11px;
+  color: #9ca3af;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.gauge {
+  display: flex;
+  justify-content: center;
+}
+
+.track {
+  fill: none;
+  stroke: #374151;
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+.arc {
+  fill: none;
+  stroke: #16a34a;
+  stroke-width: 12;
+  stroke-linecap: round;
+  transition: stroke-dasharray 200ms ease-out, stroke 200ms ease-out;
+}
+
+.num {
+  font-size: 28px;
+  font-weight: 700;
+  fill: #f3f4f6;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+.den {
+  font-size: 9px;
+  fill: #6b7280;
+  text-anchor: middle;
+}
+
+.badge {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid #16a34a;
+  color: #16a34a;
+  border-radius: 8px;
+  padding: 6px;
+  margin: 6px 0;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  background: #242830;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 3px 0;
+  font-size: 11px;
+}
+
+.row-label { color: #9ca3af; }
+
+.row-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.row-value.na { color: #6b7280; }
+
+.rec {
+  background: #242830;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-top: 6px;
+}
+
+.rec-label {
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+}
+
+.rec-text {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+button.primary,
+button.danger {
+  width: 100%;
+  min-height: 40px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms, transform 150ms;
+}
+
+button.primary { background: #0e7c7b; color: #fff; }
+button.primary:hover { background: #0f8a89; }
+button.danger { background: #7f1d1d; color: #fff; }
+button.danger:hover { background: #991b1b; }
+button:active { transform: scale(0.98); }
+
+.error {
+  font-size: 11px;
+  color: #f87171;
+  margin: 8px 0 0;
+}
+
+.scan {
+  margin-top: 10px;
+}
+
+.scan .hint {
+  font-size: 9px;
+  color: #6b7280;
+  margin: 4px 0 0;
+}
+
+button.secondary {
+  width: 100%;
+  min-height: 40px;
+  margin-top: 0;
+  background: #242830;
+  color: #f3f4f6;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms, transform 150ms;
+}
+
+button.secondary:hover { background: #2e333d; }
+button.secondary:disabled { opacity: 0.5; cursor: default; }
+
+.scan-result {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #242830;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.scan-result.ok { color: #16a34a; }
+.scan-result.warn { color: #f87171; }
+
+footer {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+footer a {
+  color: #0e7c7b;
+  font-size: 11px;
+}
+
+.foot-note {
+  font-size: 9px;
+  color: #6b7280;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}

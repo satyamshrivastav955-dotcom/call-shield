@@ -29,6 +29,8 @@ class MainActivity : ComponentActivity() {
         // Channel must exist before the app can post any notification on Android 8+.
         riskNotificationManager.createChannels()
 
+        handleSendIntent(intent)
+
         enableEdgeToEdge()
         setContent {
             SimpleCallTheme {
@@ -58,5 +60,18 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        handleSendIntent(intent)
+    }
+
+    private fun handleSendIntent(intent: Intent?) {
+        if (intent?.action == Intent.ACTION_SEND && intent.type?.startsWith("audio/") == true) {
+            val audioUri = if (android.os.Build.VERSION.SDK_INT >= 33) {
+                intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(Intent.EXTRA_STREAM)
+            } ?: intent.data
+            audioUri?.let { SimpleCallApplication.sharedIncomingAudio.value = it }
+        }
     }
 }

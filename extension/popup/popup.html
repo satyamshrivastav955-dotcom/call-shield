@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>antAI Guardian</title>
+    <script src="../shared/risk.js"></script>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <span class="logo">antAI</span>
+      <span id="models" class="models">models: checking…</span>
+    </header>
+
+    <div id="status-line" class="status-line">Not protecting any tab</div>
+
+    <div class="gauge">
+      <svg viewBox="0 0 120 66" width="150" height="83" aria-hidden="true">
+        <path class="track" d="M 10 60 A 50 50 0 0 1 110 60"/>
+        <path id="arc" class="arc" d="M 10 60 A 50 50 0 0 1 110 60"/>
+        <text id="num" class="num" x="60" y="46">—</text>
+        <text class="den" x="60" y="60">/ 100</text>
+      </svg>
+    </div>
+    <div id="badge" class="badge">MONITORING</div>
+
+    <div id="rows" class="rows"></div>
+
+    <div class="rec">
+      <span class="rec-label">RECOMMENDATION / सिफारिश</span>
+      <p id="rec-text" class="rec-text">No analysis yet.</p>
+    </div>
+
+    <button id="toggle" class="primary" type="button">Protect this tab</button>
+    <p id="error" class="error" hidden></p>
+
+    <div class="scan">
+      <button id="scan" class="secondary" type="button">Scan text on this page</button>
+      <p class="hint">Select a message first, or the whole page text is checked. Needs an account (Options).</p>
+      <div id="scan-result" class="scan-result" hidden></div>
+    </div>
+
+    <footer>
+      <a href="#" id="options-link">Options / विकल्प</a>
+      <span class="foot-note">Detection runs on your antAI server — scores are real.</span>
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

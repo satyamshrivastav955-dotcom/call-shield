@@ -317,3 +317,20 @@ data class AiInsight(
     val asrFailures: Int = 0,
     val updatedAt: Long = System.currentTimeMillis()
 )
+
+/**
+ * Result returned by POST /api/stream/analyze (one-shot file/audio stream analysis).
+ */
+data class NormalizedResult(
+    val risk: Double = 0.0,
+    val band: String = "passive",
+    val recommendation: String = "",
+    val reasons: List<String> = emptyList(),
+    val voiceDeepfake: Double? = null,
+    val scamProb: Double? = null,
+    val scamType: String? = null,
+    val urgency: Double? = null,
+    val voiceprintSimilarity: Double? = null,
+    val identityMismatch: Boolean? = null
+)
+

@@ -57,6 +57,9 @@ class AuthConfig:
     auto_verify_otp: bool = True
     token_ttl_hours: int = 720
     otp_len: int = 6
+    # When true, /api/stream/ws rejects clients without a valid ?token=
+    # (same token as the REST API). Default false keeps the LAN demo open.
+    require_stream_token: bool = False
 
     @classmethod
     def from_dict(cls, d: dict) -> "AuthConfig":

@@ -79,7 +79,7 @@ fun CallComponent(
                     modifier = Modifier
                         .size(96.dp)
                         .background(
-                            androidx.compose.ui.graphics.Color(0xFF334155),
+                            MaterialTheme.colorScheme.surfaceVariant,
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
@@ -87,7 +87,7 @@ fun CallComponent(
                     Icon(
                         painter = painterResource(id = R.drawable.ic_person),
                         contentDescription = null,
-                        tint = androidx.compose.ui.graphics.Color.White,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(48.dp)
                     )
                 }
@@ -100,7 +100,7 @@ fun CallComponent(
                 Spacer(Modifier.height(2.dp))
                 androidx.compose.material3.Text(
                     text = "Protected by antAI",
-                    color = androidx.compose.ui.graphics.Color(0xB3FFFFFF),
+                    color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.7f),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -139,7 +139,7 @@ fun CallComponent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xAA000000), shape = MaterialTheme.shapes.medium)
+                    .background(Color.Black.copy(alpha = 0.66f), shape = MaterialTheme.shapes.medium)
                     .padding(8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically

@@ -4,29 +4,39 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.codewithkael.simplecall.R
+import com.codewithkael.simplecall.ui.theme.*
+import com.codewithkael.simplecall.ui.viewmodel.ENROLL_PHRASES
+import com.codewithkael.simplecall.ui.viewmodel.FamilyMember
 import com.codewithkael.simplecall.ui.viewmodel.VoiceprintViewModel
 
 /**
- * "Register my voice" — records a short sample and stores it on the server as the
- * reference for the AI-voice cross-check.
+ * Task A5: Multi-profile family voiceprint enrollment and protection.
  *
- * This is the missing half of impersonation defence: the synthetic-voice detectors
- * answer "was this generated?", but only a registered voiceprint can answer "is
- * this actually you?". Until a sample exists the cross-check has nothing to
- * compare against, so the screen states plainly what is stored and what is not.
+ * Protects family members against AI-voice cloning and impersonation scams.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,149 +47,152 @@ fun VoiceprintScreen(
     val ui by vm.ui.collectAsState()
     val progress by vm.progress.collectAsState()
 
-    // Granting the permission starts the recording immediately, so the user's tap
-    // isn't swallowed by the permission dialog.
     val micLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> if (granted) vm.startRecording() }
 
-    Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text("Register your voice") },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = "Back")
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
-        )
-
-        Column(
-            Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-        ) {
-            WhyCard()
-
-            Spacer(Modifier.height(12.dp))
-            StatusCard(
-                loading = ui.loadingStatus,
-                unreachable = ui.serverUnreachable,
-                enrolled = ui.status.enrolled,
-                count = ui.status.count,
-                engineReady = ui.status.engineReady,
-                onRetry = vm::refresh
-            )
-
-            Spacer(Modifier.height(20.dp))
-            PhraseCard(minSeconds = ui.status.minSeconds.toInt())
-
-            Spacer(Modifier.weight(1f))
-
-            // ----- recorder -----
-            val secs = progress.seconds
-            Text(
-                text = when {
-                    progress.recording && progress.enoughAudio ->
-                        "%.0f s — that's enough, tap to save".format(secs)
-                    progress.recording -> "Recording… %.0f s".format(secs)
-                    ui.uploading -> "Saving your voice…"
-                    else -> "Tap the mic and read the sentence above"
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Family Voiceprints / आवाज़ पहचान") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = "Back")
+                    }
                 },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
-            Spacer(Modifier.height(10.dp))
-            LevelMeter(level = progress.level, active = progress.recording)
-            Spacer(Modifier.height(16.dp))
-
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (progress.recording) {
-                    OutlinedButton(onClick = vm::cancelRecording) { Text("Cancel") }
-                    Spacer(Modifier.width(12.dp))
+        }
+    ) { padding ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            when {
+                // Add member in progress (modal/stepper view)
+                ui.addFlow.active -> {
+                    AddMemberFlowScreen(
+                        flow = ui.addFlow,
+                        progress = progress,
+                        uploading = ui.uploading,
+                        minSeconds = ui.status.minSeconds.toInt(),
+                        hasMicPermission = vm.hasMicPermission(),
+                        onCancel = vm::cancelAddMember,
+                        onDetailsSubmit = { name, rel, isSelf -> vm.setMemberDetails(name, rel, isSelf) },
+                        onStartRecording = {
+                            if (vm.hasMicPermission()) vm.startRecording()
+                            else micLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        },
+                        onStopRecording = vm::stopAndUploadCurrentPhrase,
+                        onDone = vm::cancelAddMember
+                    )
                 }
-                MicButton(
-                    recording = progress.recording,
-                    enabled = !ui.uploading,
-                    onClick = {
-                        when {
-                            progress.recording -> vm.stopAndUpload()
-                            vm.hasMicPermission() -> vm.startRecording()
-                            else -> micLauncher.launch(Manifest.permission.RECORD_AUDIO)
+
+                // Main family members overview list
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        contentPadding = PaddingValues(vertical = 14.dp)
+                    ) {
+                        item {
+                            WhyCard()
+                        }
+
+                        item {
+                            StatusOverviewCard(
+                                engineReady = ui.status.engineReady,
+                                unreachable = ui.serverUnreachable,
+                                memberCount = ui.members.size,
+                                onRetry = vm::refresh
+                            )
+                        }
+
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Enrolled Members (${ui.members.size})",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Button(
+                                    onClick = vm::startAddMember,
+                                    shape = MaterialTheme.shapes.small,
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text("Add Member", style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+
+                        if (ui.members.isEmpty()) {
+                            item {
+                                EmptyFamilyMembersCard(onAdd = vm::startAddMember)
+                            }
+                        } else {
+                            items(ui.members, key = { it.id }) { member ->
+                                FamilyMemberCard(
+                                    member = member,
+                                    onDelete = { vm.removeMember(member.id) }
+                                )
+                            }
+                        }
+
+                        item {
+                            Spacer(Modifier.height(16.dp))
                         }
                     }
-                )
+                }
             }
 
-            if (ui.uploading) {
-                LinearProgressIndicator(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-            }
-
+            // Global transient toast/error banner
             ui.message?.let { msg ->
                 Surface(
                     color = if (ui.messageIsError) MaterialTheme.colorScheme.errorContainer
-                    else MaterialTheme.colorScheme.primaryContainer,
+                            else MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp)
                 ) {
                     Row(
                         Modifier.padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            painterResource(
-                                if (ui.messageIsError) R.drawable.ic_warning
-                                else R.drawable.ic_verified
+                            painter = painterResource(
+                                if (ui.messageIsError) R.drawable.ic_warning else R.drawable.ic_verified
                             ),
                             contentDescription = null,
                             tint = if (ui.messageIsError) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.primary,
+                                   else MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
+                        Spacer(Modifier.width(10.dp))
                         Text(
-                            msg,
+                            text = msg,
                             style = MaterialTheme.typography.bodySmall,
-                            color = if (ui.messageIsError)
-                                MaterialTheme.colorScheme.onErrorContainer
-                            else MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(horizontal = 10.dp)
+                            color = if (ui.messageIsError) MaterialTheme.colorScheme.onErrorContainer
+                                   else MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.weight(1f)
                         )
                         TextButton(onClick = vm::dismissMessage) { Text("OK") }
                     }
                 }
             }
-
-            if (ui.status.enrolled) {
-                TextButton(
-                    onClick = vm::deleteAll,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    Text(
-                        "Remove my stored samples",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-            }
-            Spacer(Modifier.height(8.dp))
         }
     }
 }
@@ -204,16 +217,16 @@ private fun WhyCard() {
                     .padding(start = 12.dp)
             ) {
                 Text(
-                    "Why register your voice?",
+                    "Why enroll your voiceprint?",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                Spacer(Modifier.height(3.dp))
                 Text(
-                    "If someone clones your voice to call your family, antAI compares the " +
-                        "caller against this sample and can tell them it isn't really you. " +
-                        "The sample stays on your own antAI server as a numeric voiceprint — " +
-                        "the recording itself isn't kept.",
+                    "When a scammer uses an AI voice clone of you in a call, antAI cross-checks the audio " +
+                    "against your enrolled voiceprint and flags the identity mismatch. Add family members " +
+                    "as local guardian contacts so you can track who you're protecting.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -223,47 +236,12 @@ private fun WhyCard() {
 }
 
 @Composable
-private fun StatusCard(
-    loading: Boolean,
-    unreachable: Boolean,
-    enrolled: Boolean,
-    count: Int,
+private fun StatusOverviewCard(
     engineReady: Boolean,
+    unreachable: Boolean,
+    memberCount: Int,
     onRetry: () -> Unit
 ) {
-    val (icon, tint, title, body) = when {
-        loading -> Quad(
-            R.drawable.ic_shield, MaterialTheme.colorScheme.outline,
-            "Checking…", "Asking the server what's registered."
-        )
-        // "Unknown" is not the same as "none registered": saying the latter when the
-        // server is simply unreachable would send the user re-recording for nothing.
-        unreachable -> Quad(
-            R.drawable.ic_warning, MaterialTheme.colorScheme.error,
-            "Can't reach the server",
-            "Check the server address on the Calls screen, then retry."
-        )
-        !engineReady -> Quad(
-            R.drawable.ic_warning, MaterialTheme.colorScheme.error,
-            "Voice matching is offline",
-            "The server's speaker-matching model isn't loaded, so a sample can't be " +
-                "processed yet. Start the antAI server with the speaker_verify model " +
-                "downloaded, then retry."
-        )
-        enrolled -> Quad(
-            R.drawable.ic_verified, MaterialTheme.colorScheme.primary,
-            if (count == 1) "Your voice is registered" else "$count samples registered",
-            "Cross-checking a suspicious caller against your voice is active. " +
-                "Adding another sample in a different setting improves accuracy."
-        )
-        else -> Quad(
-            R.drawable.ic_mic_off, MaterialTheme.colorScheme.error,
-            "No voice registered yet",
-            "Until you record a sample, antAI can't tell a cloned version of your " +
-                "voice apart from the real one."
-        )
-    }
-
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(14.dp),
@@ -273,8 +251,10 @@ private fun StatusCard(
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                painterResource(icon), contentDescription = null,
-                tint = tint, modifier = Modifier.size(24.dp)
+                painterResource(if (engineReady) R.drawable.ic_verified else R.drawable.ic_warning),
+                contentDescription = null,
+                tint = if (engineReady) MaterialTheme.colorScheme.primary else RiskCaution,
+                modifier = Modifier.size(24.dp)
             )
             Column(
                 Modifier
@@ -282,12 +262,21 @@ private fun StatusCard(
                     .padding(horizontal = 12.dp)
             ) {
                 Text(
-                    title,
+                    text = when {
+                        unreachable -> "Server unreachable"
+                        engineReady -> "Voice Matching Engine Ready"
+                        else -> "Engine initializing…"
+                    },
                     style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    body,
+                    text = when {
+                        unreachable -> "Check server host IP in Settings."
+                        engineReady -> "$memberCount profiles protected on this device."
+                        else -> "Speaker verification model is loading on the server."
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -300,93 +289,404 @@ private fun StatusCard(
 }
 
 @Composable
-private fun PhraseCard(minSeconds: Int) {
-    Surface(
-        color = MaterialTheme.colorScheme.primaryContainer,
-        shape = RoundedCornerShape(14.dp),
+private fun FamilyMemberCard(
+    member: FamilyMember,
+    onDelete: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_person),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = member.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (member.isPrimary) {
+                        Spacer(Modifier.width(6.dp))
+                        Surface(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                "Primary",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = if (member.samplesCount > 0) "${member.relation} · ${member.samplesCount} phrase samples"
+                           else "${member.relation} · local contact (no voiceprint)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "Status: ${member.lastVerified}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (member.samplesCount > 0) RiskSafe else RiskCaution
+                )
+            }
+
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Remove member",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyFamilyMembersCard(onAdd: () -> Unit) {
+    Card(
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(
-                "Read this out loud (about $minSeconds–8 seconds)",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "\"This is my real voice. I am registering it with antAI so my family " +
-                    "can tell if someone pretends to be me.\"",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
-    }
-}
-
-@Composable
-private fun LevelMeter(level: Float, active: Boolean) {
-    // The recorder already smooths the RMS, so no animation is needed here — one
-    // less moving part, and the bar reflects exactly what was measured.
-    val shown = if (active) level.coerceIn(0f, 1f) else 0f
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(8.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
-    ) {
-        if (shown > 0f) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Box(
-                Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(shown)
-                    .background(
-                        if (shown > 0.06f) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.outline,
-                        RoundedCornerShape(4.dp)
-                    )
+                modifier = Modifier
+                    .size(54.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_person),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = "No family members enrolled yet",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Enroll your own voice so antAI can flag clones of you. Add parents, children or partners " +
+                "as local guardian contacts — per-person voice matching isn't available yet.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onAdd, shape = MaterialTheme.shapes.small) {
+                Text("Enroll Your Voice")
+            }
         }
-    }
-    if (active && shown <= 0.06f) {
-        Text(
-            "We can barely hear you — speak a little louder.",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(top = 4.dp)
-        )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Multi-step Add Family Member flow (Task A5: details -> 3 phrases recording -> confirmation).
+ */
 @Composable
-private fun MicButton(recording: Boolean, enabled: Boolean, onClick: () -> Unit) {
-    val bg = when {
-        !enabled -> MaterialTheme.colorScheme.surfaceVariant
-        recording -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.primary
-    }
-    Surface(
-        color = bg,
-        shape = CircleShape,
-        modifier = Modifier.size(76.dp),
-        onClick = onClick,
-        enabled = enabled
+private fun AddMemberFlowScreen(
+    flow: com.codewithkael.simplecall.ui.viewmodel.AddMemberFlow,
+    progress: com.codewithkael.simplecall.voice.VoiceprintRecorder.Progress,
+    uploading: Boolean,
+    minSeconds: Int,
+    hasMicPermission: Boolean,
+    onCancel: () -> Unit,
+    onDetailsSubmit: (String, String, Boolean) -> Unit,
+    onStartRecording: () -> Unit,
+    onStopRecording: () -> Unit,
+    onDone: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                painterResource(if (recording) R.drawable.ic_mic_off else R.drawable.ic_mic_on),
-                contentDescription = if (recording) "Stop and save" else "Start recording",
-                tint = Color.White,
-                modifier = Modifier.size(32.dp)
-            )
+        when (flow.step) {
+            // Step 0: Input Name & Relationship
+            0 -> {
+                var name by remember { mutableStateOf("") }
+                var relation by remember { mutableStateOf("") }
+                var isSelf by remember { mutableStateOf(flow.isSelf) }
+
+                Text(
+                    text = "Add Member / नया सदस्य जोड़ें",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Who are you registering?",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    FilterChip(
+                        selected = isSelf,
+                        onClick = { isSelf = true },
+                        label = { Text("Myself (voiceprint)") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = !isSelf,
+                        onClick = { isSelf = false },
+                        label = { Text("Family member (local)") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = if (isSelf)
+                        "Record 3 phrases of your own voice — the server cross-checks callers against it."
+                    else
+                        "Saved on this device as a guardian contact. antAI's server supports one voiceprint (yours), so family members are listed locally for now.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(if (isSelf) "Your Name" else "Member Name (e.g. Mom, Rahul)") },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = relation,
+                    onValueChange = { relation = it },
+                    label = { Text(if (isSelf) "Label (e.g. Me, Owner)" else "Relationship (e.g. Mother, Son, Spouse)") },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onCancel,
+                        modifier = Modifier.weight(1f),
+                        shape = MaterialTheme.shapes.small
+                    ) { Text("Cancel") }
+
+                    Button(
+                        onClick = { if (name.isNotBlank()) onDetailsSubmit(name.trim(), relation.trim(), isSelf) },
+                        enabled = name.isNotBlank(),
+                        modifier = Modifier.weight(1f),
+                        shape = MaterialTheme.shapes.small
+                    ) { Text(if (isSelf) "Continue to Voice" else "Add Member") }
+                }
+            }
+
+            // Step 1: Record 3 phrases
+            1 -> {
+                val currentPhrase = ENROLL_PHRASES.getOrElse(flow.phraseIndex) { "" }
+
+                Text(
+                    text = "Recording for ${flow.name}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Phrase ${flow.phraseIndex + 1} of 3",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Please read this sentence aloud:",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = "\"$currentPhrase\"",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+
+                Spacer(Modifier.weight(1f))
+
+                val secs = progress.seconds
+                Text(
+                    text = when {
+                        progress.recording && progress.enoughAudio ->
+                            "%.0f s — enough audio, tap to save".format(secs)
+                        progress.recording -> "Recording… %.0f s (need $minSeconds s)".format(secs)
+                        uploading -> "Processing sample…"
+                        else -> "Tap the mic and read the phrase"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(10.dp))
+
+                // Level meter
+                val shown = if (progress.recording) progress.level.coerceIn(0f, 1f) else 0f
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                ) {
+                    if (shown > 0f) {
+                        Box(
+                            Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(shown)
+                                .background(
+                                    if (shown > 0.06f) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.outline,
+                                    RoundedCornerShape(4.dp)
+                                )
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                // Mic button
+                val bg = when {
+                    uploading -> MaterialTheme.colorScheme.surfaceVariant
+                    progress.recording -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.primary
+                }
+                Surface(
+                    color = bg,
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .size(76.dp)
+                        .clickable(enabled = !uploading) {
+                            if (progress.recording) onStopRecording()
+                            else onStartRecording()
+                        }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(
+                                if (progress.recording) R.drawable.ic_mic_off else R.drawable.ic_mic_on
+                            ),
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+
+                if (uploading) {
+                    Spacer(Modifier.height(12.dp))
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
+
+                Spacer(Modifier.height(16.dp))
+                OutlinedButton(onClick = onCancel) { Text("Cancel") }
+            }
+
+            // Step 2: Confirmation
+            2 -> {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(RiskSafeBg, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = RiskSafe,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = if (flow.isSelf) "Voiceprint Enrolled!" else "Family Member Added!",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = if (flow.isSelf)
+                        "Your voice is registered on the antAI server with 3 samples. During analyzed calls, " +
+                        "antAI cross-checks the caller's voice against it and flags a mismatch."
+                    else
+                        "${flow.name} is saved as a guardian contact on this device. Per-person server " +
+                        "voiceprints aren't available yet — their calls are still screened by the " +
+                        "deepfake and scam-pattern detectors, just not by voice matching.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(Modifier.height(24.dp))
+                Button(onClick = onDone, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.small) {
+                    Text("Done / पूर्ण")
+                }
+            }
         }
     }
 }
-
-/** Tiny holder so [StatusCard] can pick all four pieces of copy in one `when`. */
-private data class Quad(
-    val icon: Int,
-    val tint: Color,
-    val title: String,
-    val body: String
-)

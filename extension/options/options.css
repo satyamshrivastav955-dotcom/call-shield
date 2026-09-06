@@ -1,0 +1,116 @@
+body {
+  margin: 0;
+  padding: 24px;
+  background: #1a1d23;
+  color: #f3f4f6;
+  font-family: "Segoe UI", Roboto, system-ui, sans-serif;
+}
+
+main {
+  max-width: 520px;
+}
+
+h1 {
+  font-size: 18px;
+  color: #0e7c7b;
+  margin: 0 0 20px;
+}
+
+section {
+  margin-bottom: 18px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+input,
+select {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 8px 10px;
+  background: #242830;
+  color: #f3f4f6;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid #0e7c7b;
+}
+
+.hint {
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 6px 0 0;
+}
+
+.hint code {
+  background: #242830;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+#save {
+  background: #0e7c7b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  min-height: 40px;
+  padding: 0 24px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#save:hover { background: #0f8a89; }
+
+.saved { color: #16a34a; font-size: 13px; }
+
+.account-status { font-weight: 400; }
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.row input {
+  flex: 1;
+}
+
+button.inline {
+  min-height: 40px;
+  padding: 0 14px;
+  background: #2e333d;
+  color: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+button.inline:hover { background: #374151; }
+button.inline:disabled { opacity: 0.5; cursor: default; }
+
+.note {
+  margin-top: 26px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #9ca3af;
+}

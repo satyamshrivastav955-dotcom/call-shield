@@ -20,16 +20,18 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.codewithkael.simplecall.ui.viewmodel.MainViewModel
 import com.codewithkael.simplecall.ui.viewmodel.SettingsViewModel
 
 /**
@@ -44,28 +46,30 @@ import com.codewithkael.simplecall.ui.viewmodel.SettingsViewModel
  */
 @Composable
 fun SettingsScreen(
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val scenario by viewModel.scenario
     val sensitivity by viewModel.sensitivity
     val verifyPolicy by viewModel.verifyPolicy
     val retentionDays by viewModel.retentionDays
+    val host by mainViewModel.serverHost.collectAsState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF0F2F5))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         // Header
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             Column {
-                Text("Settings", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF111827))
-                Text("Protection behaviour and privacy controls", fontSize = 13.sp, color = Color(0xFF6B7280))
+                Text("Settings", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Text("Protection behaviour and privacy controls", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -76,6 +80,16 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // ── Server connection section ─────────────────────────────────────
+            SectionHeader("Signaling & AI Server")
+            com.codewithkael.simplecall.ui.components.ServerConfig(
+                initialHost = host,
+                onConnect = { newHost ->
+                    mainViewModel.updateServerHost(newHost)
+                    mainViewModel.connectSocket()
+                }
+            )
+
             // ── Scenario section ──────────────────────────────────────────────
             SectionHeader("Session Scenario")
             SettingsCard {
@@ -160,7 +174,7 @@ fun SettingsScreen(
                        "windows of speech derived values only. All ML inference runs on the server " +
                        "you configured, not on a third-party cloud.",
                 fontSize = 11.sp,
-                color = Color(0xFF9CA3AF),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 16.sp,
                 modifier = Modifier.padding(horizontal = 4.dp)
             )
@@ -174,7 +188,7 @@ private fun SectionHeader(title: String) {
         text = title.uppercase(),
         fontSize = 11.sp,
         fontWeight = FontWeight.SemiBold,
-        color = Color(0xFF6B7280),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         letterSpacing = 0.8.sp,
         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
     )
@@ -184,7 +198,7 @@ private fun SectionHeader(title: String) {
 private fun SettingsCard(content: @Composable () -> Unit) {
     Card(
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -194,9 +208,9 @@ private fun SettingsCard(content: @Composable () -> Unit) {
 
 @Composable
 private fun SettingLabel(title: String, subtitle: String) {
-    Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF111827))
+    Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
     Spacer(Modifier.height(4.dp))
-    Text(subtitle, fontSize = 12.sp, color = Color(0xFF6B7280), lineHeight = 18.sp)
+    Text(subtitle, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 18.sp)
 }
 
 @Composable
@@ -216,7 +230,6 @@ private fun RadioGroup(
 
 @Composable
 private fun RadioRow(label: String, selected: Boolean, onClick: () -> Unit) {
-    val accent = Color(0xFF0E7C7B)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -228,7 +241,8 @@ private fun RadioRow(label: String, selected: Boolean, onClick: () -> Unit) {
             modifier = Modifier
                 .size(20.dp)
                 .background(
-                    color = if (selected) accent else Color(0xFFE5E7EB),
+                    color = if (selected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outlineVariant,
                     shape = RoundedCornerShape(50)
                 ),
             contentAlignment = Alignment.Center
@@ -237,7 +251,7 @@ private fun RadioRow(label: String, selected: Boolean, onClick: () -> Unit) {
                 Icon(
                     Icons.Default.Check,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(12.dp)
                 )
             }
@@ -247,7 +261,8 @@ private fun RadioRow(label: String, selected: Boolean, onClick: () -> Unit) {
             text = label,
             fontSize = 13.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (selected) Color(0xFF111827) else Color(0xFF4B5563)
+            color = if (selected) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

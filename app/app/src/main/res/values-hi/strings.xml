@@ -1,0 +1,70 @@
+﻿<resources>
+    <string name="app_name">antAI</string>
+
+    <!-- Risk bands -->
+    <string name="risk_band_critical">उच्च जोखिम (High Risk)</string>
+    <string name="risk_band_caution">सावधानी (Review)</string>
+    <string name="risk_band_safe">सुरक्षित (Safe)</string>
+    <string name="risk_band_checking">जांच जारी है…</string>
+    <string name="risk_band_unavailable">अनुपलब्ध (Unavailable)</string>
+
+    <!-- Risk headlines -->
+    <string name="risk_headline_critical">इस कॉल पर तुरंत ध्यान देने की आवश्यकता है</string>
+    <string name="risk_headline_caution">कुछ असामान्य प्रतीत हो रहा है</string>
+    <string name="risk_headline_safe">अब तक कोई खतरा नहीं पाया गया</string>
+    <string name="risk_headline_default">कॉल सुरक्षा</string>
+
+    <!-- Risk score & signals -->
+    <string name="risk_score_format">जोखिम %1$d/100</string>
+    <string name="signal_voice_auth">आवाज़ की वास्तविकता (Voice Authenticity)</string>
+    <string name="signal_message_patterns">संदेश पैटर्न (Scam Patterns)</string>
+    <string name="signal_voiceprint">कॉलर पहचान (Voiceprint Match)</string>
+    <string name="signal_pressure">दबाव की रणनीति (Pressure Tactics)</string>
+    <string name="signal_unavailable">— / अनुपलब्ध</string>
+    <string name="signal_analyzing">सुन रहे हैं / जांच जारी है…</string>
+
+    <string name="signal_voice_likely_synthetic">संभावित रूप से नकली / AI आवाज़ (%1$d%%)</string>
+    <string name="signal_voice_uncertain">संदेहास्पद (%1$d%%)</string>
+    <string name="signal_voice_natural">प्राकृतिक आवाज़ प्रतीत होती है (%1$d%%)</string>
+
+    <string name="signal_scam_detected">%1$s पैटर्न से मेल खाता है (%2$d%%)</string>
+    <string name="signal_scam_suspicious">संदिग्ध पैटर्न पाए गए (%1$d%%)</string>
+    <string name="signal_scam_none">कोई स्कैम पैटर्न नहीं मिला</string>
+
+    <string name="signal_pressure_high">अत्यधिक दबाव (%1$d/100)</string>
+    <string name="signal_pressure_some">हल्का दबाव (%1$d/100)</string>
+    <string name="signal_pressure_normal">सामान्य बातचीत</string>
+
+    <string name="signal_voiceprint_match">%1$d%% समानता (Voice Match)</string>
+    <string name="signal_voiceprint_mismatch">%1$d%% (आवाज़ मेल नहीं खाती)</string>
+
+    <!-- Common card labels & actions -->
+    <string name="btn_view_details">विवरण देखें</string>
+    <string name="btn_show_less">कम दिखाएं</string>
+    <string name="btn_draft_fir">FIR / शिकायत का प्रारूप बनाएं</string>
+    <string name="btn_share_result">परिणाम शेयर करें</string>
+    <string name="label_call_analysis">कॉल विश्लेषण</string>
+    <string name="label_recommended_action">सुझाव: %1$s</string>
+    <string name="label_why_flagged">फ्लैग करने का कारण</string>
+
+    <!-- Protection & Mode chips -->
+    <string name="hero_protecting_calls">antAI आपकी कॉल्स की सुरक्षा कर रहा है</string>
+    <string name="hero_protection_subtitle">रियल-टाइम स्कैम, AI-वॉइस और क्लोनिंग सुरक्षा</string>
+    <string name="mode_on_device">ऑन-डिवाइस</string>
+    <string name="mode_server_backed">सर्वर-कनेक्टेड</string>
+    <string name="mode_offline">ऑफलाइन</string>
+    <string name="mode_connected">कनेक्टेड</string>
+    <string name="mode_local_only">लोकल-ओनली</string>
+
+    <!-- Recording check flow -->
+    <string name="card_check_recording_title">रिकॉर्डिंग की जांच करें</string>
+    <string name="card_check_recording_desc">फॉरवर्ड किए गए ऑडियो या वॉइस नोट को डीपफेक और स्कैम के लिए स्कैन करें</string>
+    <string name="btn_pick_audio">ऑडियो फ़ाइल चुनें</string>
+    <string name="recording_analyzing">ऑडियो का विश्लेषण जारी है…</string>
+    <string name="recording_success">विश्लेषण पूरा हुआ</string>
+    <string name="recording_error">रिकॉर्डिंग का विश्लेषण नहीं हो सका</string>
+
+    <!-- Incidents -->
+    <string name="incidents_empty_title">अभी तक कोई संदिग्ध घटना दर्ज नहीं है</string>
+    <string name="incidents_empty_subtitle">सुरक्षित कॉल्स और सत्र यहाँ दिखाई नहीं देते हैं।</string>
+</resources>

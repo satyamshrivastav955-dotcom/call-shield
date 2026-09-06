@@ -3,6 +3,7 @@ package com.codewithkael.simplecall.ui.viewmodel
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codewithkael.simplecall.remote.socket.SignalMessageModel
@@ -23,9 +24,12 @@ import com.codewithkael.simplecall.remote.antai.AntaiClient
 import com.codewithkael.simplecall.remote.antai.AntaiRestClient
 import com.codewithkael.simplecall.remote.antai.CallerVerification
 import com.codewithkael.simplecall.remote.antai.DeepfakeAlert
+import com.codewithkael.simplecall.remote.antai.IncidentItem
+import com.codewithkael.simplecall.remote.antai.NormalizedResult
 import com.codewithkael.simplecall.remote.antai.TranscriptEntry
 import com.codewithkael.simplecall.remote.antai.VerifyOutcome
 import com.codewithkael.simplecall.remote.antai.VoiceprintResult
+import com.codewithkael.simplecall.ui.components.ProtectionMode
 import com.codewithkael.simplecall.webrtc.AiTapEngine
 import com.codewithkael.simplecall.utils.ConnectionState
 import com.codewithkael.simplecall.utils.ConnectionState.CallingTarget
@@ -130,6 +134,17 @@ class MainViewModel @Inject constructor(
         prefs.edit().putString("server_host", cleaned).apply()
     }
 
+    val protectionMode: MutableStateFlow<ProtectionMode> = MutableStateFlow(ProtectionMode.ON_DEVICE)
+    val lastIncident: MutableStateFlow<IncidentItem?> = MutableStateFlow(null)
+
+    data class FileAnalysisUiState(
+        val isAnalyzing: Boolean = false,
+        val result: NormalizedResult? = null,
+        val error: String? = null,
+        val fileName: String? = null
+    )
+    val fileAnalysisState = MutableStateFlow(FileAnalysisUiState())
+
     init {
         rtcAudioManager.setDefaultAudioDevice(RTCAudioManager.AudioDevice.SPEAKER_PHONE)
 
@@ -146,6 +161,69 @@ class MainViewModel @Inject constructor(
                 }
             }
         }
+
+        // Auto-connect if server host is set, and query models / incidents
+        if (serverHost.value.isNotBlank()) {
+            connectSocket()
+            refreshProtectionMode()
+            loadLastIncident()
+        }
+    }
+
+    fun refreshProtectionMode() {
+        viewModelScope.launch {
+            antaiRest.debugModels().fold(
+                onSuccess = { models ->
+                    val anyReady = models.values.any { it }
+                    protectionMode.value = if (anyReady) ProtectionMode.SERVER_BACKED else ProtectionMode.ON_DEVICE
+                },
+                onFailure = {
+                    protectionMode.value = if (connectionState.value !is New) ProtectionMode.ON_DEVICE else ProtectionMode.OFFLINE
+                }
+            )
+        }
+    }
+
+    fun loadLastIncident() {
+        viewModelScope.launch {
+            antaiRest.listVerdicts().onSuccess { list ->
+                lastIncident.value = list.maxByOrNull { it.createdAt }
+            }
+        }
+    }
+
+    fun analyzeAudioUri(context: Context, uri: Uri) {
+        fileAnalysisState.value = FileAnalysisUiState(
+            isAnalyzing = true,
+            fileName = uri.lastPathSegment ?: "audio_sample"
+        )
+        viewModelScope.launch {
+            runCatching {
+                val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: throw IllegalStateException("Could not read audio data")
+                val mime = context.contentResolver.getType(uri) ?: "audio/*"
+                val name = uri.lastPathSegment ?: "recording.wav"
+                val scenario = context.getSharedPreferences("antai_settings", Context.MODE_PRIVATE)
+                    .getString("scenario", "high_value_txn")
+                antaiRest.analyzeAudioFile(bytes, name, mime, scenario = scenario)
+            }.fold(
+                onSuccess = { res ->
+                    res.onSuccess { norm ->
+                        fileAnalysisState.value = FileAnalysisUiState(isAnalyzing = false, result = norm)
+                        loadLastIncident()
+                    }.onFailure { e ->
+                        fileAnalysisState.value = FileAnalysisUiState(isAnalyzing = false, error = e.message ?: "Analysis failed")
+                    }
+                },
+                onFailure = { e ->
+                    fileAnalysisState.value = FileAnalysisUiState(isAnalyzing = false, error = e.message ?: "Could not open audio file")
+                }
+            )
+        }
+    }
+
+    fun clearFileAnalysis() {
+        fileAnalysisState.value = FileAnalysisUiState()
     }
 
     fun connectSocket() {
@@ -153,15 +231,19 @@ class MainViewModel @Inject constructor(
             object : SocketClient.SocketCallback {
                 override fun onRemoteSocketClientOpened() {
                     setConnectionState(WaitingForCall)
+                    refreshProtectionMode()
+                    loadLastIncident()
                 }
 
                 override fun onRemoteSocketClientClosed() {
                     // Connection dropped -> return to the server screen so the user can reconnect.
                     setConnectionState(New)
+                    protectionMode.value = ProtectionMode.OFFLINE
                 }
 
                 override fun onRemoteSocketClientConnectionError(e: Exception?) {
                     setConnectionState(New)
+                    protectionMode.value = ProtectionMode.OFFLINE
                     viewModelScope.launch {
                         eventState.emit(
                             "Can't reach server at ${serverHost.value}:${Constants.SIGNALING_PORT}. " +

@@ -78,6 +78,23 @@ async def stream_ws(ws: WebSocket):
         except Exception:
             pass
 
+    # Optional auth, mirroring /ws/call: a provided ?token= is always
+    # validated; set auth.require_stream_token=true to also reject
+    # unauthenticated clients (default off for the LAN demo clients —
+    # Android app, windows_client, dashboard).
+    from ..config import get_config
+    from .auth import token_user
+    token = ws.query_params.get("token")
+    user = token_user(token) if token else None
+    if token and user is None:
+        await _send({"type": "error", "message": "invalid or expired token"})
+        await ws.close()
+        return
+    if get_config().auth.require_stream_token and user is None:
+        await _send({"type": "error", "message": "auth required"})
+        await ws.close()
+        return
+
     async def _heartbeat():
         # Even during buffered silence the pipeline ticks (periodic loop). Stream
         # a snapshot on an interval so a dashboard shows the engines live and the

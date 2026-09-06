@@ -293,12 +293,19 @@ class AntaiRestClient @Inject constructor(
      * deliberately dependency-free (HttpURLConnection only) and enrolment is the
      * one endpoint that isn't JSON. Streamed with a fixed content length so a
      * several-hundred-KB recording never has to be buffered twice.
+     *
+     * [fields] are extra plain form fields written before the file part (used by
+     * /api/stream/analyze for `scenario`).
      */
     private suspend fun multipart(
-        path: String, bytes: ByteArray, filename: String, contentType: String
+        path: String, bytes: ByteArray, filename: String, contentType: String,
+        fields: Map<String, String> = emptyMap()
     ): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
             val boundary = "----antai${System.nanoTime()}"
+            val fieldParts = fields.entries.joinToString("") { (k, v) ->
+                "--$boundary\r\nContent-Disposition: form-data; name=\"$k\"\r\n\r\n$v\r\n"
+            }.toByteArray()
             val head = ("--$boundary\r\n" +
                 "Content-Disposition: form-data; name=\"file\"; filename=\"$filename\"\r\n" +
                 "Content-Type: $contentType\r\n\r\n").toByteArray()
@@ -312,8 +319,9 @@ class AntaiRestClient @Inject constructor(
                     setRequestProperty("Authorization", "Bearer ${session.token}")
                 }
                 setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
-                setFixedLengthStreamingMode(head.size + bytes.size + tail.size)
+                setFixedLengthStreamingMode(fieldParts.size + head.size + bytes.size + tail.size)
                 outputStream.use { out ->
+                    out.write(fieldParts)
                     out.write(head); out.write(bytes); out.write(tail); out.flush()
                 }
             }
@@ -385,6 +393,62 @@ class AntaiRestClient @Inject constructor(
             }
         }
     }.recoverCatching { emptyList() }
+
+    // ---------- debug: GET /api/debug/models ----------
+    // Response shape: {"models": {key: {ready: bool, ...}}, "providers": {...}}
+    suspend fun debugModels(): Result<Map<String, Boolean>> = get(
+        "/api/debug/models", auth = false
+    ).mapCatching { body ->
+        val models = JSONObject(body).optJSONObject("models") ?: JSONObject()
+        buildMap {
+            val keys = models.keys()
+            while (keys.hasNext()) {
+                val k = keys.next()
+                val m = models.optJSONObject(k)
+                put(k, m?.optBoolean("ready", false) ?: false)
+            }
+        }
+    }
+
+    // ---------- file analysis: POST /api/stream/analyze ----------
+    suspend fun analyzeAudioFile(
+        bytes: ByteArray,
+        filename: String = "upload.wav",
+        contentType: String = "audio/*",
+        scenario: String? = null
+    ): Result<NormalizedResult> =
+        multipart(
+            "/api/stream/analyze", bytes, filename, contentType,
+            fields = if (scenario != null) mapOf("scenario" to scenario) else emptyMap()
+        )
+            .mapCatching { body ->
+                val o = JSONObject(body)
+                // Server signals failure with {"error": "..."} — never parse that as a
+                // clean 0-risk result (ground rule: no fake "safe" verdicts).
+                val error = o.optString("error")
+                if (error.isNotBlank()) throw IllegalStateException(error)
+
+                val acoustic = o.optJSONObject("acoustic")
+                val prosody = o.optJSONObject("prosody")
+                val voiceprint = o.optJSONObject("voiceprint")
+                val reasonsArr = o.optJSONArray("reasons")
+                val reasons = if (reasonsArr != null) {
+                    (0 until reasonsArr.length()).map { reasonsArr.optString(it) }
+                } else emptyList()
+
+                NormalizedResult(
+                    risk = o.optDouble("risk", 0.0),
+                    band = o.optString("band", "passive"),
+                    recommendation = o.optString("recommendation", ""),
+                    reasons = reasons,
+                    voiceDeepfake = acoustic?.optDoubleOrNull("voice_deepfake"),
+                    scamProb = prosody?.optDoubleOrNull("scam_prob"),
+                    scamType = prosody?.optStringOrNull("scam_type"),
+                    urgency = prosody?.optDoubleOrNull("urgency"),
+                    voiceprintSimilarity = voiceprint?.optDoubleOrNull("similarity"),
+                    identityMismatch = voiceprint?.optBooleanOrNull("identity_mismatch")
+                )
+            }
 }
 
 // ---------- response DTOs ----------

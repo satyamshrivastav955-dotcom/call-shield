@@ -10,5 +10,6 @@ class SimpleCallApplication : Application() {
         val USER_ID = UUID.randomUUID().toString().substring(0,5)
         /** True while MainActivity is in the foreground (resumed, not paused). */
         @Volatile var isForegrounded: Boolean = false
+        val sharedIncomingAudio = kotlinx.coroutines.flow.MutableStateFlow<android.net.Uri?>(null)
     }
 }

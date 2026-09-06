@@ -1,3 +1,70 @@
 <resources>
     <string name="app_name">antAI</string>
+
+    <!-- Risk bands -->
+    <string name="risk_band_critical">High risk</string>
+    <string name="risk_band_caution">Caution</string>
+    <string name="risk_band_safe">Looks safe</string>
+    <string name="risk_band_checking">Checking…</string>
+    <string name="risk_band_unavailable">Unavailable</string>
+
+    <!-- Risk headlines -->
+    <string name="risk_headline_critical">This session needs attention</string>
+    <string name="risk_headline_caution">Something looks unusual</string>
+    <string name="risk_headline_safe">No threat detected so far</string>
+    <string name="risk_headline_default">Call protection</string>
+
+    <!-- Risk score & signals -->
+    <string name="risk_score_format">Risk %1$d/100</string>
+    <string name="signal_voice_auth">Voice authenticity</string>
+    <string name="signal_message_patterns">Message patterns</string>
+    <string name="signal_voiceprint">Caller identity / Voiceprint</string>
+    <string name="signal_pressure">Pressure tactics</string>
+    <string name="signal_unavailable">— / Unavailable</string>
+    <string name="signal_analyzing">Listening / Analyzing…</string>
+
+    <string name="signal_voice_likely_synthetic">Likely synthetic (%1$d%%)</string>
+    <string name="signal_voice_uncertain">Uncertain (%1$d%%)</string>
+    <string name="signal_voice_natural">Appears natural (%1$d%% synthetic)</string>
+
+    <string name="signal_scam_detected">Matches %1$s patterns (%2$d%%)</string>
+    <string name="signal_scam_suspicious">Suspicious patterns (%1$d%%)</string>
+    <string name="signal_scam_none">No scam patterns detected</string>
+
+    <string name="signal_pressure_high">High pressure (%1$d/100)</string>
+    <string name="signal_pressure_some">Some pressure (%1$d/100)</string>
+    <string name="signal_pressure_normal">Normal tone</string>
+
+    <string name="signal_voiceprint_match">%1$d%% match</string>
+    <string name="signal_voiceprint_mismatch">%1$d%% (Voice mismatch)</string>
+
+    <!-- Common card labels & actions -->
+    <string name="btn_view_details">View details</string>
+    <string name="btn_show_less">Show less</string>
+    <string name="btn_draft_fir">Draft FIR / Complaint</string>
+    <string name="btn_share_result">Share result</string>
+    <string name="label_call_analysis">Call analysis</string>
+    <string name="label_recommended_action">Recommended: %1$s</string>
+    <string name="label_why_flagged">Why flagged</string>
+
+    <!-- Protection & Mode chips -->
+    <string name="hero_protecting_calls">antAI is guarding your calls</string>
+    <string name="hero_protection_subtitle">Real-time scam, AI-voice &amp; impersonation shield</string>
+    <string name="mode_on_device">On-device</string>
+    <string name="mode_server_backed">Server-backed</string>
+    <string name="mode_offline">Offline</string>
+    <string name="mode_connected">Connected</string>
+    <string name="mode_local_only">Local-only</string>
+
+    <!-- Recording check flow -->
+    <string name="card_check_recording_title">Check a recording</string>
+    <string name="card_check_recording_desc">Scan forwarded audio or voice notes for deepfakes and scam scripts</string>
+    <string name="btn_pick_audio">Select audio file</string>
+    <string name="recording_analyzing">Analyzing audio stream…</string>
+    <string name="recording_success">Analysis complete</string>
+    <string name="recording_error">Could not analyze recording</string>
+
+    <!-- Incidents -->
+    <string name="incidents_empty_title">No incidents recorded yet</string>
+    <string name="incidents_empty_subtitle">Protected sessions with no risky signals won\'t appear here.</string>
 </resources>

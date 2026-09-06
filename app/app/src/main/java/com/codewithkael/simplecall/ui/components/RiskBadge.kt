@@ -16,6 +16,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.codewithkael.simplecall.R
 import com.codewithkael.simplecall.remote.antai.RiskBand
+import com.codewithkael.simplecall.ui.theme.AntaiMuted
+import com.codewithkael.simplecall.ui.theme.AntaiSurfaceVariant
 import com.codewithkael.simplecall.ui.theme.RiskCaution
 import com.codewithkael.simplecall.ui.theme.RiskCautionBg
 import com.codewithkael.simplecall.ui.theme.RiskCritical
@@ -23,14 +25,14 @@ import com.codewithkael.simplecall.ui.theme.RiskCriticalBg
 import com.codewithkael.simplecall.ui.theme.RiskSafe
 import com.codewithkael.simplecall.ui.theme.RiskSafeBg
 
-/** Visual spec for a risk band: colors, label and icon. */
-private data class BandSpec(val fg: Color, val bg: Color, val label: String, val icon: Int)
+/** Visual spec for a risk band: colors, label string resource, and icon. */
+private data class BandSpec(val fg: Color, val bg: Color, val labelRes: Int, val icon: Int)
 
 private fun spec(band: RiskBand): BandSpec = when (band) {
-    RiskBand.CRITICAL -> BandSpec(RiskCritical, RiskCriticalBg, "Scam risk", R.drawable.ic_warning)
-    RiskBand.CAUTION -> BandSpec(RiskCaution, RiskCautionBg, "Caution", R.drawable.ic_warning)
-    RiskBand.SAFE -> BandSpec(RiskSafe, RiskSafeBg, "Looks safe", R.drawable.ic_verified)
-    RiskBand.PENDING -> BandSpec(Color(0xFF6B7280), Color(0xFFEFF1F4), "Checking…", R.drawable.ic_shield)
+    RiskBand.CRITICAL -> BandSpec(RiskCritical, RiskCriticalBg, R.string.risk_band_critical, R.drawable.ic_warning)
+    RiskBand.CAUTION -> BandSpec(RiskCaution, RiskCautionBg, R.string.risk_band_caution, R.drawable.ic_warning)
+    RiskBand.SAFE -> BandSpec(RiskSafe, RiskSafeBg, R.string.risk_band_safe, R.drawable.ic_verified)
+    RiskBand.PENDING -> BandSpec(AntaiMuted, AntaiSurfaceVariant, R.string.risk_band_checking, R.drawable.ic_shield)
 }
 
 /**
@@ -58,7 +60,7 @@ fun RiskBadge(
             modifier = Modifier.size(if (compact) 12.dp else 14.dp)
         )
         Text(
-            text = s.label,
+            text = androidx.compose.ui.res.stringResource(id = s.labelRes),
             color = s.fg,
             style = if (compact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium,
             modifier = Modifier.padding(start = 4.dp)

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>antAI Guardian — Options</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <h1>antAI Guardian — Options / विकल्प</h1>
+
+      <section>
+        <label for="serverHost">antAI server host</label>
+        <input id="serverHost" type="text" placeholder="localhost:8765" />
+        <p class="hint">Host and port of your antAI server, e.g. <code>192.168.1.100:8765</code>. Audio streams over <code>ws://&lt;host&gt;/api/stream/ws</code>.</p>
+      </section>
+
+      <section id="account-section">
+        <label>Account / खाता <span id="account-status" class="account-status"></span></label>
+        <div id="login-form">
+          <div class="row">
+            <input id="phone" type="tel" placeholder="+91XXXXXXXXXX" />
+            <button id="send-otp" class="inline" type="button">Send OTP</button>
+          </div>
+          <div class="row">
+            <input id="otp" type="text" inputmode="numeric" placeholder="6-digit OTP" disabled />
+            <button id="verify-otp" class="inline" type="button" disabled>Verify</button>
+          </div>
+          <p id="login-msg" class="hint"></p>
+          <p class="hint">Used for page-text scan (POST /api/notify/external) and, when the server requires it, the audio stream. In dev mode the OTP is returned by the server.</p>
+        </div>
+        <div id="logged-in" hidden>
+          <p class="hint" id="logged-in-as"></p>
+          <button id="signout" class="inline" type="button">Sign out</button>
+        </div>
+      </section>
+
+      <section>
+        <label for="scenario">Detection scenario</label>
+        <select id="scenario">
+          <option value="routine_call">Routine Call — standard thresholds</option>
+          <option value="high_value_txn">High-Value Transaction — earlier alerts</option>
+          <option value="privileged_access">Privileged Access — strictest</option>
+        </select>
+        <p class="hint">Forwarded to the pipeline per call — sets per-scenario risk thresholds, same as the Android app.</p>
+      </section>
+
+      <section>
+        <label for="verifyAt">Verify threshold (risk ≥ this → "Elevated" + notification)</label>
+        <input id="verifyAt" type="number" min="1" max="99" />
+      </section>
+
+      <section>
+        <label for="criticalAt">Critical threshold (risk ≥ this → "High Risk")</label>
+        <input id="criticalAt" type="number" min="2" max="100" />
+      </section>
+
+      <section>
+        <label for="cooldownSec">Notification cooldown (seconds)</label>
+        <input id="cooldownSec" type="number" min="5" max="300" />
+        <p class="hint">At most one notification per interval during a high-risk call (default 15 s).</p>
+      </section>
+
+      <div class="actions">
+        <button id="save" type="button">Save / सहेजें</button>
+        <span id="saved" class="saved" hidden>Saved ✓</span>
+      </div>
+
+      <p class="note">
+        All ML inference (AASIST deepfake detection, Whisper transcription, LLM scam-pattern
+        analysis, voiceprint matching) runs on the server you configure — the extension only
+        captures tab audio and renders the server's scores. If a model is unavailable, the
+        extension shows "unavailable", never a fake safe score.
+      </p>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>
