@@ -52,6 +52,7 @@ SimpleVideoCallReacJs/node_modules/
 
 # Android & Gradle
 .gradle/
+.kotlin/
 **/build/
 captures/
 .externalNativeBuild/
@@ -78,3 +79,8 @@ CACHEDIR.TAG
 *.db
 *.sqlite
 *.sqlite3
+
+# Datasets & Incomplete Downloads (fetch_datasets.py target)
+server/datasets/
+*.crdownload
+*.part

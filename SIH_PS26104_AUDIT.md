@@ -328,3 +328,38 @@ Order: Android UX renovation → Windows client → additional tests → polish
 ---
 
 *Audit produced: 2026-09-04. Code inspected: all files listed above. No README claims accepted without code verification.*
+
+---
+
+## 13. Addendum 2026-09-06 — on-device pivot (supersedes stale items above)
+
+Architecture changed: **phone is now the product; server is a dev-only
+training/export rig.** New code: `app/.../ai/` (FusionEngine Kotlin port,
+OrtEngines, ProsodyEngine, TextEngines, ShieldPipeline, Explainer,
+ModelManager), `app/.../shield/` (ShieldService foreground mic, ShieldScreen
+toggle, ShieldViewModel, AudioFileDecoder, TrustedStore, FIR draft),
+`server/scripts/export_onnx.py`, `server/audio_samples/labels.csv + README.md`,
+`server/.env.example`.
+
+Corrections to audit claims (all verified in code this session):
+
+| Audit claim ("NOT DONE") | Reality 2026-09-06 |
+|---|---|
+| Scenario thresholds | DONE — `config.yaml scenarios` consumed by `nodes.py`; ported to `FusionEngine.kt` + bank/telecom presets |
+| Context enrichment | DONE — context dict flows stream→dispatcher→nodes; txn≥5L boost ported |
+| Android OS notifications | DONE — `RiskNotificationManager` + ShieldService background alerts |
+| Salted phone hashing | DONE — server salted SHA-256; phone adds per-install salt, hash-only storage |
+| `eval_detector.py` missing | EXISTS — plus fixed `eval_video_ensemble.py:121`, portable `compare_voice_models.py`, populated `spoof|bonafide/` |
+| `classifiers/urgency` missing | EXISTS on disk (`models/classifiers/{scam_pattern,urgency,intent}`) |
+| Family voiceprint single-user | Multi-contact `TrustedStore` (hash + embedding, claim-challenge ready) |
+| Institution workflows missing | `bank`/`telecom` profile presets map to tuned scenario thresholds |
+| Minimal retention | Phone: features-only, no raw audio, 30-day verdict TTL; server: document TTL still open |
+| Prosody gap | Closed on-device: `ProsodyEngine` DSP (pause/speech-rate/energy) + urgency hint |
+
+Still open (honest): on-device ASR = `Transcriber` slot (whisper.cpp/sherpa-onnx
+JNI lands P2b); spoof/voiceprint ORT weights ship via `export_onnx.py`
+(AASIST-L + ECAPA fine-tune need GPU rig); server DB TTL purge job.
+Dead dirs `voice_deepfake_2019/cross1/classifier_base` unreferenced — left on
+disk (weights), excluded from export map. `ChatSocketClient.sendChat/ping`
+intentionally kept (parity comment).
+

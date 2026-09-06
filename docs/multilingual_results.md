@@ -99,3 +99,37 @@ To deliver production-grade reliability in Indian environments without high fals
 ## 4. Conclusion & Future Roadmap
 
 antAI's pipeline successfully supports Indian multilingual contexts with strong NLP resilience and minimal false alarms. For future iterations, fine-tuning acoustic feature extractors on native Indian speech corpora (such as IndicTTS and IIT Madras speech datasets) will further narrow the acoustic domain gap down to <2% FPR.
+
+---
+
+## 5. On-device update 2026-09-06 (phone runs offline)
+
+Server tables above still describe the rig. On-device parity:
+
+- **Text heuristics** (`app/.../ai/TextEngines.kt`, unit-tested in
+  `TextEnginesTest`): en + Hindi/Hinglish keyword sets for all 8 scam types,
+  5 request types, pressure/time/threat urgency. Lone keyword ≤0.33 (never
+  alerts alone — same dead-zone philosophy as server fusion).
+- **ASR slot**: `Transcriber` interface; whisper.cpp / sherpa-onnx JNI binds
+  here (P2b). Until then transcripts come from file metadata; acoustic +
+  prosody signals already score fully offline.
+- **Explainer** ships en/hi template output; `FusionEngine` + scenarios
+  identical to server math, so server WER/FPR tables transfer once weights
+  export via `server/scripts/export_onnx.py`.
+- Next measurement: re-run §1–§3 tables on-phone (speech-rate/pause
+  distributions per language + heuristic precision on hi/Hinglish scam
+  transcripts) and append here — do not claim numbers before measuring.
+
+## 6. Measured 2026-09-06 — AST padding bug + fix (rig, CUDA, n=6 seed)
+
+- Finding: AST spoof head scores **1.0 on every zero-padded short window**
+  (4s/8s, silence/real/clone alike) but sanely on full ~10s unpadded context.
+  Root cause is the 4s `voice_window_s` feed, not the weights (identical on
+  upstream checkpoint and local fine-tune, fp16 and fp32).
+- Fix shipped: `voice_long_window_s: 10.0` — AST scores long context, w2v
+  keeps the 4s window (`deepfake_voice.analyze(..., context_audio)`).
+- `windowed_eval.py` seed (2 spoof + 4 bonafide, thr=0.7): **acc 0.333 →
+  0.833, FPR 0.750 → 0.250, FNR 0.500 → 0.000.** n=6 is directional only —
+  real validation needs the ASVspoof5/CV-hi sets now downloading.
+- Residual: w2v still hot on Indian bonafide (0.4–0.9); AST misses Hindi TTS
+  at full context. Both need Indian-distribution retraining (AASIST-L plan).
