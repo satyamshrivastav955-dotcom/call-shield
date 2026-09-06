@@ -73,7 +73,8 @@ fun ShieldScreen(vm: ShieldViewModel = hiltViewModel(), onBack: () -> Unit) {
     val busy by vm.busy.collectAsState()
     val contacts by vm.contacts.collectAsState()
     val enrollStatus by vm.enrollStatus.collectAsState()
-    var scenario by remember { mutableStateOf("routine_call") }
+    // Start from the live scenario (shared with SettingsScreen), not a default.
+    var scenario by remember { mutableStateOf(vm.scenario) }
     var showContacts by remember { mutableStateOf(false) }
     var showFir by remember { mutableStateOf(false) }
 

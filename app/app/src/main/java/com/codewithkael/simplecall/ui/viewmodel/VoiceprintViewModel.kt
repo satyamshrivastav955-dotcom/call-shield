@@ -1,41 +1,45 @@
 package com.codewithkael.simplecall.ui.viewmodel
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.codewithkael.simplecall.ai.ModelManager
+import com.codewithkael.simplecall.ai.ShieldPipeline
+import com.codewithkael.simplecall.ai.SpeakerEngine
 import com.codewithkael.simplecall.remote.antai.AntaiRestClient
 import com.codewithkael.simplecall.remote.antai.VoiceprintStatus
+import com.codewithkael.simplecall.shield.TrustedStore
 import com.codewithkael.simplecall.voice.VoiceprintRecorder
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.json.JSONArray
-import org.json.JSONObject
-import java.util.UUID
+import java.io.File
 import javax.inject.Inject
 
 /**
- * Multi-profile family voiceprint model (Task A5).
+ * Family voiceprint model. Two data paths, one list:
+ *  - Self: 3 phrases -> server voiceprint (AntaiRestClient) — used during analyzed calls.
+ *  - Family: on-device voiceprint (TrustedStore + SpeakerEngine ECAPA embedding) —
+ *    shared with the Shield stack, so the armed mic service flags voice mismatches live.
  */
 data class FamilyMember(
-    val id: String,
+    val id: String, // "self" or the TrustedStore phoneHash
     val name: String,
     val relation: String,
-    val samplesCount: Int = 1,
+    val samplesCount: Int = 0, // self only (server sample count)
     val lastVerified: String = "Active guardian",
+    val hasVoiceprint: Boolean = false, // family only (on-device)
     val isPrimary: Boolean = false
 )
 
 data class AddMemberFlow(
     val active: Boolean = false,
-    val step: Int = 0, // 0: details input, 1: phrase recording (0..2), 2: confirmation
+    val step: Int = 0, // 0: details input, 1: recording, 2: confirmation
     val name: String = "",
     val relation: String = "",
-    // ponytail: server supports ONE voiceprint per user (the owner's). Self enrollments
-    // upload to the server; family members are a local roster only — no per-speaker API exists.
+    val phone: String = "", // family only — hashed before storage, never kept plaintext
+    val phoneHash: String? = null, // set when re-enrolling an existing family member
     val isSelf: Boolean = true,
     val phraseIndex: Int = 0,
     val phrasesRecorded: Int = 0
@@ -47,17 +51,14 @@ val ENROLL_PHRASES = listOf(
     "If someone clones my voice, antAI can cross-check against this registered print."
 )
 
-/**
- * Multi-profile family voiceprint enrollment and management (Task A5).
- */
 @HiltViewModel
 class VoiceprintViewModel @Inject constructor(
     private val rest: AntaiRestClient,
     private val recorder: VoiceprintRecorder,
-    @ApplicationContext private val context: Context
+    private val store: TrustedStore,
+    private val models: ModelManager,
+    private val pipeline: ShieldPipeline
 ) : ViewModel() {
-
-    private val prefs = context.getSharedPreferences("antai_family_voiceprints", Context.MODE_PRIVATE)
 
     data class UiState(
         val loadingStatus: Boolean = true,
@@ -76,47 +77,26 @@ class VoiceprintViewModel @Inject constructor(
     val progress: StateFlow<VoiceprintRecorder.Progress> = recorder.progress
 
     init {
-        loadFamilyMembers()
         refresh()
     }
 
-    private fun loadFamilyMembers() {
-        val json = prefs.getString("members", "[]") ?: "[]"
-        val list = mutableListOf<FamilyMember>()
-        try {
-            val arr = JSONArray(json)
-            for (i in 0 until arr.length()) {
-                val o = arr.getJSONObject(i)
-                list.add(
-                    FamilyMember(
-                        id = o.getString("id"),
-                        name = o.getString("name"),
-                        relation = o.getString("relation"),
-                        samplesCount = o.optInt("samplesCount", 1),
-                        lastVerified = o.optString("lastVerified", "Active guardian"),
-                        isPrimary = o.optBoolean("isPrimary", false)
-                    )
-                )
-            }
-        } catch (_: Exception) {}
-
-        _ui.value = _ui.value.copy(members = list)
+    /** Self entry (server status) + family contacts (TrustedStore) — one list. */
+    private fun membersWith(self: FamilyMember?): List<FamilyMember> {
+        val family = store.loadContacts().map { c ->
+            FamilyMember(
+                id = c.phoneHash,
+                name = c.displayName,
+                relation = c.tag ?: c.label,
+                hasVoiceprint = c.hasVoiceprint,
+                lastVerified = if (c.hasVoiceprint) "Voice enrolled (on-device)" else "No voiceprint yet"
+            )
+        }
+        return (self?.let { listOf(it) } ?: emptyList()) + family
     }
 
-    private fun saveFamilyMembers(list: List<FamilyMember>) {
-        val arr = JSONArray()
-        list.forEach { m ->
-            val o = JSONObject()
-            o.put("id", m.id)
-            o.put("name", m.name)
-            o.put("relation", m.relation)
-            o.put("samplesCount", m.samplesCount)
-            o.put("lastVerified", m.lastVerified)
-            o.put("isPrimary", m.isPrimary)
-            arr.put(o)
-        }
-        prefs.edit().putString("members", arr.toString()).apply()
-        _ui.value = _ui.value.copy(members = list)
+    private fun rebuildMembers() {
+        val self = _ui.value.members.firstOrNull { it.isPrimary }
+        _ui.value = _ui.value.copy(members = membersWith(self))
     }
 
     fun refresh() {
@@ -124,28 +104,22 @@ class VoiceprintViewModel @Inject constructor(
         viewModelScope.launch {
             rest.voiceprintStatus()
                 .onSuccess { st ->
+                    val self = if (st.enrolled) FamilyMember(
+                        id = "self",
+                        name = "Me (Account Owner)",
+                        relation = "Self",
+                        samplesCount = maxOf(1, st.count),
+                        lastVerified = "Enrolled",
+                        isPrimary = true
+                    ) else null
                     _ui.value = _ui.value.copy(
-                        loadingStatus = false, status = st, serverUnreachable = false
+                        loadingStatus = false, status = st, serverUnreachable = false,
+                        members = membersWith(self)
                     )
-                    // If primary self member doesn't exist, seed it with server count
-                    val current = _ui.value.members.toMutableList()
-                    if (st.enrolled && current.none { it.isPrimary }) {
-                        current.add(
-                            0,
-                            FamilyMember(
-                                id = "self",
-                                name = "Me (Account Owner)",
-                                relation = "Self",
-                                samplesCount = maxOf(1, st.count),
-                                lastVerified = "Enrolled",
-                                isPrimary = true
-                            )
-                        )
-                        saveFamilyMembers(current)
-                    }
                 }
                 .onFailure {
                     _ui.value = _ui.value.copy(loadingStatus = false, serverUnreachable = true)
+                    rebuildMembers()
                 }
         }
     }
@@ -155,23 +129,45 @@ class VoiceprintViewModel @Inject constructor(
         _ui.value = _ui.value.copy(addFlow = AddMemberFlow(active = true, step = 0))
     }
 
-    fun setMemberDetails(name: String, relation: String, isSelf: Boolean) {
+    /** Re-enroll an existing family member's on-device voiceprint. */
+    fun startReenroll(member: FamilyMember) {
+        if (!familyVoiceModelReady()) {
+            _ui.value = _ui.value.copy(
+                message = "Voice model not on device yet — enroll after models are installed.",
+                messageIsError = true
+            )
+            return
+        }
+        _ui.value = _ui.value.copy(
+            addFlow = AddMemberFlow(
+                active = true, step = 1, name = member.name, relation = member.relation,
+                phoneHash = member.id, isSelf = false
+            ),
+            message = null
+        )
+    }
+
+    fun setMemberDetails(name: String, relation: String, phone: String, isSelf: Boolean) {
         val current = _ui.value.addFlow
         if (isSelf) {
-            _ui.value = _ui.value.copy(addFlow = current.copy(name = name, relation = relation, isSelf = true, step = 1))
-        } else {
-            // Family member: local roster entry only — no server upload (single-profile API).
-            val member = FamilyMember(
-                id = UUID.randomUUID().toString(),
-                name = name.ifBlank { "Family Member" },
-                relation = relation.ifBlank { "Family" },
-                samplesCount = 0,
-                lastVerified = "Local profile",
-                isPrimary = false
-            )
-            saveFamilyMembers(_ui.value.members + member)
-            _ui.value = _ui.value.copy(addFlow = current.copy(name = name, relation = relation, isSelf = false, step = 2))
+            _ui.value = _ui.value.copy(addFlow = current.copy(name = name, relation = relation, phone = phone, isSelf = true, step = 1))
+            return
         }
+        // Family: real on-device voiceprint contact in the shared TrustedStore
+        // (same store ShieldScreen reads). Refuse voice enrollment honestly when
+        // the ECAPA model isn't installed — the contact is still added.
+        val hash = store.hashPhone(phone)
+        store.addContact(name.ifBlank { "Family Member" }, phone, tag = relation.ifBlank { "Family" })
+        rebuildMembers()
+        if (!familyVoiceModelReady()) {
+            _ui.value = _ui.value.copy(
+                addFlow = current.copy(name = name, relation = relation, phoneHash = hash, isSelf = false, step = 2),
+                message = "Added — but the voice model isn't on this device yet, so no voiceprint was recorded.",
+                messageIsError = false
+            )
+            return
+        }
+        _ui.value = _ui.value.copy(addFlow = current.copy(name = name, relation = relation, phoneHash = hash, isSelf = false, step = 1))
     }
 
     fun cancelAddMember() {
@@ -179,8 +175,26 @@ class VoiceprintViewModel @Inject constructor(
         _ui.value = _ui.value.copy(addFlow = AddMemberFlow(active = false), message = null)
     }
 
+    /** Skip voice recording for a family member — contact stays without a print. */
+    fun skipFamilyVoice() {
+        recorder.discard()
+        val current = _ui.value.addFlow
+        _ui.value = _ui.value.copy(addFlow = current.copy(step = 2), message = null)
+    }
+
     fun startRecording() {
-        val why = recorder.start(minSeconds = _ui.value.status.minSeconds)
+        val flow = _ui.value.addFlow
+        // Family enrollments need the on-device ECAPA model; check before opening the mic.
+        if (!flow.isSelf && !familyVoiceModelReady()) {
+            _ui.value = _ui.value.copy(
+                message = "Voice model not on device yet — enroll after models are installed.",
+                messageIsError = true
+            )
+            return
+        }
+        // Family: ~3s free talk (like the Shield flow); self: server's minimum.
+        val minSeconds = if (flow.isSelf) _ui.value.status.minSeconds else 3.0
+        val why = recorder.start(minSeconds = minSeconds)
         _ui.value = if (why == null) {
             _ui.value.copy(message = null, messageIsError = false)
         } else {
@@ -194,6 +208,10 @@ class VoiceprintViewModel @Inject constructor(
     }
 
     fun stopAndUploadCurrentPhrase() {
+        if (_ui.value.addFlow.isSelf) stopAndUploadSelfPhrase() else stopAndSaveFamilyVoice()
+    }
+
+    private fun stopAndUploadSelfPhrase() {
         val minSeconds = _ui.value.status.minSeconds
         val wav = recorder.stop()
         val secs = progress.value.seconds
@@ -235,20 +253,11 @@ class VoiceprintViewModel @Inject constructor(
                             )
                         } else {
                             // Completed all 3 phrases! Enroll/refresh the self profile.
-                            val newMember = FamilyMember(
-                                id = "self",
-                                name = currentFlow.name.ifBlank { "Me (Account Owner)" },
-                                relation = "Self",
-                                samplesCount = 3,
-                                lastVerified = "Enrolled (3 samples)",
-                                isPrimary = true
-                            )
-                            val updated = _ui.value.members.filterNot { it.isPrimary } + newMember
-                            saveFamilyMembers(updated)
                             _ui.value = _ui.value.copy(
                                 addFlow = currentFlow.copy(step = 2),
                                 message = null
                             )
+                            refresh()
                         }
                     } else {
                         _ui.value = _ui.value.copy(
@@ -268,11 +277,70 @@ class VoiceprintViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Family voiceprint: compute the ECAPA embedding on-device, store it in
+     * TrustedStore (shared with the Shield stack) and hand it to the running
+     * pipeline so an armed Shield uses it immediately. Never fabricated — if
+     * the model or recording fails, the contact keeps no voiceprint.
+     */
+    private fun stopAndSaveFamilyVoice() {
+        val wav = recorder.stop()
+        if (wav == null) {
+            _ui.value = _ui.value.copy(
+                message = "Nothing was recorded. Check microphone permissions.",
+                messageIsError = true
+            )
+            return
+        }
+        val flow = _ui.value.addFlow
+        _ui.value = _ui.value.copy(uploading = true, message = null, messageIsError = false)
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val pcm = pcmFromWav(wav)
+            val embedding = try { SpeakerEngine(models).embed(pcm) } catch (_: Exception) { null }
+            if (embedding == null) {
+                _ui.value = _ui.value.copy(
+                    uploading = false,
+                    message = "Couldn't compute voiceprint (model missing/failed).",
+                    messageIsError = true
+                )
+                return@launch
+            }
+            val hash = flow.phoneHash ?: store.hashPhone(flow.phone)
+            store.setVoiceprint(hash, embedding)
+            pipeline.enrolledVoiceprint = embedding
+            _ui.value = _ui.value.copy(
+                uploading = false,
+                addFlow = flow.copy(step = 2),
+                message = null
+            )
+            rebuildMembers()
+        }
+    }
+
+    private fun familyVoiceModelReady(): Boolean =
+        models.allReady() || File(models.pathFor("ecapa_tdnn.int8.onnx")).exists()
+
+    /** Strip the 44-byte WAV header and convert s16LE mono -> float PCM. */
+    private fun pcmFromWav(wav: ByteArray): FloatArray {
+        val start = 44.coerceAtMost(wav.size)
+        val n = (wav.size - start) / 2
+        val out = FloatArray(n)
+        var j = start
+        for (i in 0 until n) {
+            val lo = wav[j].toInt() and 0xFF
+            val hi = wav[j + 1].toInt()
+            out[i] = ((hi shl 8) or lo) / 32768f
+            j += 2
+        }
+        return out
+    }
+
     fun removeMember(id: String) {
-        val updated = _ui.value.members.filterNot { it.id == id }
-        saveFamilyMembers(updated)
         if (id == "self") {
             deleteAll()
+        } else {
+            store.removeContact(id)
+            rebuildMembers()
         }
     }
 
@@ -285,7 +353,7 @@ class VoiceprintViewModel @Inject constructor(
                         message = "Stored voice samples removed.",
                         messageIsError = false
                     )
-                    saveFamilyMembers(emptyList())
+                    rebuildMembers()
                 }
                 .onFailure {
                     _ui.value = _ui.value.copy(

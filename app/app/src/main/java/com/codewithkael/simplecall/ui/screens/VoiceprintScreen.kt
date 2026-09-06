@@ -81,12 +81,13 @@ fun VoiceprintScreen(
                         minSeconds = ui.status.minSeconds.toInt(),
                         hasMicPermission = vm.hasMicPermission(),
                         onCancel = vm::cancelAddMember,
-                        onDetailsSubmit = { name, rel, isSelf -> vm.setMemberDetails(name, rel, isSelf) },
+                        onDetailsSubmit = { name, rel, phone, isSelf -> vm.setMemberDetails(name, rel, phone, isSelf) },
                         onStartRecording = {
                             if (vm.hasMicPermission()) vm.startRecording()
                             else micLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         },
                         onStopRecording = vm::stopAndUploadCurrentPhrase,
+                        onSkipVoice = vm::skipFamilyVoice,
                         onDone = vm::cancelAddMember
                     )
                 }
@@ -145,6 +146,7 @@ fun VoiceprintScreen(
                             items(ui.members, key = { it.id }) { member ->
                                 FamilyMemberCard(
                                     member = member,
+                                    onEnroll = { vm.startReenroll(member) },
                                     onDelete = { vm.removeMember(member.id) }
                                 )
                             }
@@ -226,7 +228,8 @@ private fun WhyCard() {
                 Text(
                     "When a scammer uses an AI voice clone of you in a call, antAI cross-checks the audio " +
                     "against your enrolled voiceprint and flags the identity mismatch. Add family members " +
-                    "as local guardian contacts so you can track who you're protecting.",
+                    "with their own on-device voiceprints — the offline Shield uses them to catch voice " +
+                    "mismatches in live calls. आवाज़ की तुलना इसी फ़ोन पर होती है।",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -291,6 +294,7 @@ private fun StatusOverviewCard(
 @Composable
 private fun FamilyMemberCard(
     member: FamilyMember,
+    onEnroll: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
@@ -346,8 +350,9 @@ private fun FamilyMemberCard(
                 }
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = if (member.samplesCount > 0) "${member.relation} · ${member.samplesCount} phrase samples"
-                           else "${member.relation} · local contact (no voiceprint)",
+                    text = if (member.isPrimary) "${member.relation} · ${member.samplesCount} phrase samples (server)"
+                           else if (member.hasVoiceprint) "${member.relation} · voice ✓ (on-device)"
+                           else "${member.relation} · no voiceprint yet",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -355,16 +360,27 @@ private fun FamilyMemberCard(
                 Text(
                     text = "Status: ${member.lastVerified}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (member.samplesCount > 0) RiskSafe else RiskCaution
+                    color = if (member.isPrimary || member.hasVoiceprint) RiskSafe else RiskCaution
                 )
             }
 
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Remove member",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Row {
+                if (!member.isPrimary) {
+                    IconButton(onClick = onEnroll) {
+                        Icon(
+                            painterResource(R.drawable.ic_mic_on),
+                            contentDescription = if (member.hasVoiceprint) "Re-enroll voice" else "Enroll voice",
+                            tint = if (member.hasVoiceprint) MaterialTheme.colorScheme.primary else RiskCaution
+                        )
+                    }
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Remove member",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -406,8 +422,9 @@ private fun EmptyFamilyMembersCard(onAdd: () -> Unit) {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Enroll your own voice so antAI can flag clones of you. Add parents, children or partners " +
-                "as local guardian contacts — per-person voice matching isn't available yet.",
+                text = "Enroll your own voice on the antAI server so analyzed calls can flag clones of you. " +
+                "Add parents, children or partners with an on-device voiceprint — it works offline and " +
+                "never leaves this phone. पहले अपनी आवाज़ दर्ज करें।",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -431,9 +448,10 @@ private fun AddMemberFlowScreen(
     minSeconds: Int,
     hasMicPermission: Boolean,
     onCancel: () -> Unit,
-    onDetailsSubmit: (String, String, Boolean) -> Unit,
+    onDetailsSubmit: (String, String, String, Boolean) -> Unit,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
+    onSkipVoice: () -> Unit,
     onDone: () -> Unit
 ) {
     Column(
@@ -447,6 +465,7 @@ private fun AddMemberFlowScreen(
             0 -> {
                 var name by remember { mutableStateOf("") }
                 var relation by remember { mutableStateOf("") }
+                var phone by remember { mutableStateOf("") }
                 var isSelf by remember { mutableStateOf(flow.isSelf) }
 
                 Text(
@@ -476,7 +495,7 @@ private fun AddMemberFlowScreen(
                     FilterChip(
                         selected = !isSelf,
                         onClick = { isSelf = false },
-                        label = { Text("Family member (local)") },
+                        label = { Text("Family member (on-device)") },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -485,7 +504,9 @@ private fun AddMemberFlowScreen(
                     text = if (isSelf)
                         "Record 3 phrases of your own voice — the server cross-checks callers against it."
                     else
-                        "Saved on this device as a guardian contact. antAI's server supports one voiceprint (yours), so family members are listed locally for now.",
+                        "Their voiceprint is computed and stored on this phone (offline) — the Shield uses " +
+                        "it to flag voice mismatches in live calls. Only a protected hash of the number is stored. " +
+                        "आवाज़ इसी फ़ोन पर सुरक्षित रहती है।",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -509,6 +530,17 @@ private fun AddMemberFlowScreen(
                     shape = MaterialTheme.shapes.small,
                     modifier = Modifier.fillMaxWidth()
                 )
+                if (!isSelf) {
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = phone,
+                        onValueChange = { phone = it },
+                        label = { Text("Phone number (stored as a protected hash only)") },
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 Spacer(Modifier.height(24.dp))
 
                 Row(
@@ -522,15 +554,16 @@ private fun AddMemberFlowScreen(
                     ) { Text("Cancel") }
 
                     Button(
-                        onClick = { if (name.isNotBlank()) onDetailsSubmit(name.trim(), relation.trim(), isSelf) },
-                        enabled = name.isNotBlank(),
+                        onClick = { onDetailsSubmit(name.trim(), relation.trim(), phone.trim(), isSelf) },
+                        enabled = name.isNotBlank() && (isSelf || phone.isNotBlank()),
                         modifier = Modifier.weight(1f),
                         shape = MaterialTheme.shapes.small
-                    ) { Text(if (isSelf) "Continue to Voice" else "Add Member") }
+                    ) { Text(if (isSelf) "Continue to Voice" else "Add & Record Voice") }
                 }
             }
 
-            // Step 1: Record 3 phrases
+            // Step 1: Record — self: 3 phrases (server); family: one ~3s free-talk
+            // sample embedded on-device.
             1 -> {
                 val currentPhrase = ENROLL_PHRASES.getOrElse(flow.phraseIndex) { "" }
 
@@ -541,7 +574,7 @@ private fun AddMemberFlowScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Phrase ${flow.phraseIndex + 1} of 3",
+                    text = if (flow.isSelf) "Phrase ${flow.phraseIndex + 1} of 3" else "On-device voice sample",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -555,13 +588,14 @@ private fun AddMemberFlowScreen(
                 ) {
                     Column(Modifier.padding(16.dp)) {
                         Text(
-                            text = "Please read this sentence aloud:",
+                            text = if (flow.isSelf) "Please read this sentence aloud:" else "Talk naturally for a few seconds:",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            text = "\"$currentPhrase\"",
+                            text = if (flow.isSelf) "\"$currentPhrase\""
+                                   else "\"Hi, this is my voice — I'm registering it so antAI can protect our family from voice clones.\"",
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -572,11 +606,12 @@ private fun AddMemberFlowScreen(
                 Spacer(Modifier.weight(1f))
 
                 val secs = progress.seconds
+                val needSecs = if (flow.isSelf) minSeconds else 3
                 Text(
                     text = when {
                         progress.recording && progress.enoughAudio ->
                             "%.0f s — enough audio, tap to save".format(secs)
-                        progress.recording -> "Recording… %.0f s (need $minSeconds s)".format(secs)
+                        progress.recording -> "Recording… %.0f s (need $needSecs s)".format(secs)
                         uploading -> "Processing sample…"
                         else -> "Tap the mic and read the phrase"
                     },
@@ -644,6 +679,12 @@ private fun AddMemberFlowScreen(
 
                 Spacer(Modifier.height(16.dp))
                 OutlinedButton(onClick = onCancel) { Text("Cancel") }
+                if (!flow.isSelf && !progress.recording) {
+                    Spacer(Modifier.height(6.dp))
+                    TextButton(onClick = onSkipVoice) {
+                        Text("Skip for now — add without a voiceprint")
+                    }
+                }
             }
 
             // Step 2: Confirmation
@@ -674,9 +715,9 @@ private fun AddMemberFlowScreen(
                         "Your voice is registered on the antAI server with 3 samples. During analyzed calls, " +
                         "antAI cross-checks the caller's voice against it and flags a mismatch."
                     else
-                        "${flow.name} is saved as a guardian contact on this device. Per-person server " +
-                        "voiceprints aren't available yet — their calls are still screened by the " +
-                        "deepfake and scam-pattern detectors, just not by voice matching.",
+                        "${flow.name}'s voiceprint is stored on this phone and shared with the on-device Shield — " +
+                        "it flags voice mismatches in live calls, fully offline. Only a protected hash of " +
+                        "their number was saved. आवाज़ इसी फ़ोन पर सुरक्षित है।",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,

@@ -75,6 +75,13 @@ class ShieldViewModel @Inject constructor(
         }
     }
 
+    /** Current scenario — pipeline if set, else the shared pref, else SettingsScreen's default. */
+    val scenario: String
+        get() = pipeline.scenario
+            ?: context.getSharedPreferences("antai_settings", Context.MODE_PRIVATE)
+                .getString("scenario", null)
+            ?: "high_value_txn"
+
     fun setScenario(name: String) {
         val resolved = when (name) {
             // institution presets: bank/telecom reuse tuned thresholds
@@ -84,8 +91,10 @@ class ShieldViewModel @Inject constructor(
         }
         // Shared pipeline -> takes effect on the running service immediately (#7).
         pipeline.scenario = resolved
-        // Persist so a service (re)start restores it in ShieldService.onCreate.
-        context.getSharedPreferences("antai_shield", Context.MODE_PRIVATE)
+        // Persist to "antai_settings" — the SAME pref SettingsScreen and the server
+        // path (MainViewModel) use — so one scenario choice drives both paths. A
+        // service (re)start restores it in ShieldService.onCreate.
+        context.getSharedPreferences("antai_settings", Context.MODE_PRIVATE)
             .edit().putString("scenario", resolved).apply()
     }
 

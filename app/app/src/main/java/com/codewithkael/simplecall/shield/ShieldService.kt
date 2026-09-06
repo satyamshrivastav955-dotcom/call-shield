@@ -63,9 +63,11 @@ class ShieldService : Service() {
         super.onCreate()
         createChannel()
         // Restore the operator-selected profile (#7) + enrolled family voiceprint
-        // (#6) into the shared pipeline before the mic loop starts.
+        // (#6) into the shared pipeline before the mic loop starts. Scenario lives
+        // in "antai_settings" — the same pref SettingsScreen/MainViewModel use, so
+        // one choice drives both the server path and the on-device Shield.
         try {
-            val prefs = getSharedPreferences("antai_shield", MODE_PRIVATE)
+            val prefs = getSharedPreferences("antai_settings", MODE_PRIVATE)
             prefs.getString("scenario", null)?.let { pipeline.scenario = it }
             store.loadContacts().firstOrNull { it.voiceprint != null }?.voiceprint?.let {
                 pipeline.enrolledVoiceprint = it
