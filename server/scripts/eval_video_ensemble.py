@@ -118,6 +118,9 @@ def main() -> None:
                   f"ensemble fake_prob={round(v.get('fake_prob',0),3)}")
         if vp is not None and vp > 0.5:
             print(f"    -> VOICE deepfake fired: spoof_prob={vp:.3f}")
+        video_flagged = bool(v.get("flagged"))
+        voice_flagged = vl in ("spoof", "fake") or (vp is not None and vp > 0.5)
+        combined = video_flagged or voice_flagged
         print(f"    -> VIDEO CALL verdict: {'FLAG' if combined else 'ok'} "
               f"(video-ensemble {v.get('flagged')} OR voice {vl})")
 

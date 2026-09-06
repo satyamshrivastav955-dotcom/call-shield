@@ -1,0 +1,7 @@
+filename,split,label,language,speaker,source
+Satyam_ai_voice_0(english).mp3,test,spoof,en,satyam,tts-clone
+Satyam_ai_Voice_1(hindi).mp3,test,spoof,hi,satyam,tts-clone
+Satyam_real_voice_1.wav,test,bonafide,en,satyam,human
+Satyam_real_voice_2.wav,test,bonafide,en,satyam,human
+Satyam_real_voice_3.m4a,test,bonafide,en,satyam,human
+Tushar_real_voice_1.wav,test,bonafide,en,tushar,human
