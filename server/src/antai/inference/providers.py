@@ -168,20 +168,26 @@ def last_llm_error() -> Optional[str]:
     return _LAST_LLM_ERROR
 
 
-def _explain_groq_status(status: int, body: bytes, model: str) -> str:
+def _explain_llm_status(provider: str, status: int, body: bytes, model: str) -> str:
+    """Shared HTTP-status explainer for the OpenAI-compatible LLM providers."""
     snippet = body[:300].decode("utf-8", "ignore")
     if status in (401, 403):
-        hint = "GROQ_API_KEY is missing, wrong or revoked (check server/.env)"
+        hint = f"{provider} API key is missing, wrong or revoked (check server/.env)"
     elif status == 404 or "decommissioned" in snippet or "does not exist" in snippet:
-        hint = (f"model '{model}' was not accepted by Groq — it may have been "
-                f"renamed or decommissioned; update providers.groq.model in config.yaml")
+        hint = (f"model '{model}' was not accepted by {provider} — it may have been "
+                f"renamed or decommissioned; update providers config in config.yaml")
     elif status == 429:
-        hint = "Groq rate limit / quota exhausted"
+        hint = f"{provider} rate limit / quota exhausted"
     elif status >= 500:
-        hint = "Groq server-side error; retry later"
+        hint = f"{provider} server-side error; retry later"
     else:
-        hint = "unexpected Groq response"
+        hint = f"unexpected {provider} response"
     return f"HTTP {status}: {hint} :: {snippet}"
+
+
+# Kept under its historical name for any external callers.
+def _explain_groq_status(status: int, body: bytes, model: str) -> str:
+    return _explain_llm_status("Groq", status, body, model)
 
 
 def groq_chat(messages: list[dict], *, api_key: str, model: str, endpoint: str,
@@ -202,7 +208,7 @@ def groq_chat(messages: list[dict], *, api_key: str, model: str, endpoint: str,
     try:
         status, body = _http_post(endpoint, headers, json_body=payload, timeout=30.0)
         if status != 200:
-            _LAST_LLM_ERROR = _explain_groq_status(status, body, model)
+            _LAST_LLM_ERROR = _explain_llm_status("Groq", status, body, model)
             log.error("Groq chat failed — %s", _LAST_LLM_ERROR)
             return ""
         data = json.loads(body)
@@ -217,6 +223,95 @@ def groq_chat(messages: list[dict], *, api_key: str, model: str, endpoint: str,
     except Exception as e:
         _LAST_LLM_ERROR = f"{type(e).__name__}: {e}"
         log.error("Groq chat raised — %s", _LAST_LLM_ERROR, exc_info=True)
+        return ""
+
+
+# ------------------------------------------------------------------ OpenRouter
+def openrouter_chat(messages: list[dict], *, api_key: str, model: str, endpoint: str,
+                    max_tokens: int = 256, temperature: float = 0.3) -> str:
+    """OpenRouter chat completion (OpenAI-compatible). Returns "" on failure.
+
+    OpenRouter routes to many underlying providers under one key, so it is the
+    LLM fallback #3 after Groq and Gemini. Failure reasons flow into
+    ``last_llm_error()`` just like Groq's, so /api/debug/models shows them.
+    """
+    global _LAST_LLM_ERROR
+    if not api_key:
+        _LAST_LLM_ERROR = "OPENROUTER_API_KEY is not set (see server/.env)"
+        log.error("OpenRouter chat skipped: %s", _LAST_LLM_ERROR)
+        return ""
+    # OpenRouter's attribution headers (optional but recommended by their docs)
+    headers = {"Authorization": f"Bearer {api_key}",
+               "HTTP-Referer": "https://antai.local", "X-Title": "antAI"}
+    payload = {"model": model, "messages": messages,
+               "max_tokens": max_tokens, "temperature": temperature}
+    try:
+        status, body = _http_post(endpoint, headers, json_body=payload, timeout=30.0)
+        if status != 200:
+            _LAST_LLM_ERROR = _explain_llm_status("OpenRouter", status, body, model)
+            log.error("OpenRouter chat failed — %s", _LAST_LLM_ERROR)
+            return ""
+        content = (_dig(json.loads(body), "choices.0.message.content") or "").strip()
+        if not content:
+            _LAST_LLM_ERROR = ("OpenRouter returned 200 but no message content "
+                               f"(finish_reason={_dig(json.loads(body), 'choices.0.finish_reason')})")
+            log.error("OpenRouter chat empty — %s", _LAST_LLM_ERROR)
+            return ""
+        _LAST_LLM_ERROR = None
+        return content
+    except Exception as e:
+        _LAST_LLM_ERROR = f"{type(e).__name__}: {e}"
+        log.error("OpenRouter chat raised — %s", _LAST_LLM_ERROR, exc_info=True)
+        return ""
+
+
+# --------------------------------------------------------------------- Gemini
+def gemini_chat(messages: list[dict], *, api_key: str, model: str, endpoint: str,
+                max_tokens: int = 256, temperature: float = 0.3) -> str:
+    """Gemini generateContent. Converts OpenAI-style messages -> Gemini format.
+
+    Gemini does not take a ``messages`` array: system messages become
+    ``systemInstruction``, user/assistant turns become ``contents`` with role
+    "model" for assistant. Auth is the ``x-goog-api-key`` header (NOT a query
+    param, so keys never appear in URLs or request logs). Returns "" on
+    failure, mirroring groq_chat/openrouter_chat.
+    """
+    global _LAST_LLM_ERROR
+    if not api_key:
+        _LAST_LLM_ERROR = "GEMINI_API_KEY is not set (see server/.env)"
+        log.error("Gemini chat skipped: %s", _LAST_LLM_ERROR)
+        return ""
+    system_parts = [m["content"] for m in messages if m.get("role") == "system"]
+    contents = [{"role": "model" if m.get("role") == "assistant" else "user",
+                 "parts": [{"text": m["content"]}]}
+                for m in messages if m.get("role") in ("user", "assistant")]
+    payload = {"contents": contents,
+               "generationConfig": {"maxOutputTokens": max_tokens,
+                                    "temperature": temperature}}
+    if system_parts:
+        payload["systemInstruction"] = {"parts": [{"text": "\n".join(system_parts)}]}
+    url = f"{endpoint.rstrip('/')}/{model}:generateContent"
+    headers = {"x-goog-api-key": api_key}
+    try:
+        status, body = _http_post(url, headers, json_body=payload, timeout=30.0)
+        if status != 200:
+            _LAST_LLM_ERROR = _explain_llm_status("Gemini", status, body, model)
+            log.error("Gemini chat failed — %s", _LAST_LLM_ERROR)
+            return ""
+        data = json.loads(body)
+        content = (_dig(data, "candidates.0.content.parts.0.text") or "").strip()
+        if not content:
+            # empty usually means MAX_TOKENS/SAFETY blocked the candidate
+            finish = _dig(data, "candidates.0.finishReason")
+            _LAST_LLM_ERROR = (f"Gemini returned 200 but no text "
+                               f"(finishReason={finish})")
+            log.error("Gemini chat empty — %s", _LAST_LLM_ERROR)
+            return ""
+        _LAST_LLM_ERROR = None
+        return content
+    except Exception as e:
+        _LAST_LLM_ERROR = f"{type(e).__name__}: {e}"
+        log.error("Gemini chat raised — %s", _LAST_LLM_ERROR, exc_info=True)
         return ""
 
 

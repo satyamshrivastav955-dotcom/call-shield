@@ -1,0 +1,40 @@
+# antAI server — AWS backup stack (API + TURN relay).
+# One-time EC2 setup is manual (see README.md); this file only runs the stack.
+# Usage:  ./deploy.sh   (or: docker compose up -d --build)
+
+services:
+  antai:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: antai/server
+    restart: unless-stopped
+    ports:
+      - "8765:8765"        # REST + WebSocket (put TLS in front via nginx if exposed)
+    env_file:
+      - ../.env             # API keys — gitignored, never baked into the image
+    environment:
+      ANTAI_CONFIG: /app/config.aws.yaml
+    volumes:
+      - ../models:/app/models    # weights: update via setup/download_models.py, no rebuild
+      - antai_db:/app/data       # sqlite + verdicts survive container restarts
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request as u; u.urlopen('http://localhost:8765/', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s   # model warmup takes a while on first boot
+
+  coturn:
+    image: coturn/coturn
+    restart: unless-stopped
+    network_mode: host     # TURN needs the relay port range + real host IP; NAT mapping breaks it
+    volumes:
+      - ./turnserver.aws.conf:/etc/turnserver.conf:ro
+    # ports are NOT declared here: network_mode: host ignores them — the
+    # container binds 3478 tcp/udp + 49152-65535/udp directly on the host.
+    # Open those in the EC2 security group (see README.md).
+
+volumes:
+  antai_db:

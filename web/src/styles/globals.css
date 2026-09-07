@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-cyber: #06080e;
+    --chassis-cyber: #0a0f1d;
+    --surface-cyber: #0f172a;
+    --surface-elevated: #162032;
+    --border-cyber: #1c2638;
+    --text-cyber: #f8fafc;
+    --text-muted: #94a3b8;
+  }
+
+  body {
+    background-color: var(--bg-cyber);
+    color: var(--text-cyber);
+    font-family: var(--font-sans), Inter, -apple-system, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Tactical custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #06080e;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1c2638;
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2d3e58;
+  }
+}
+
+@layer utilities {
+  /* Tactical hairline background grid */
+  .bg-tactical-grid {
+    background-size: 32px 32px;
+    background-image: 
+      linear-gradient(to right, rgba(28, 38, 56, 0.35) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(28, 38, 56, 0.35) 1px, transparent 1px);
+  }
+
+  /* Sub-pixel security frame border */
+  .border-tactical {
+    border: 1px solid #1c2638;
+  }
+  .border-tactical-highlight {
+    border: 1px solid #2d3e58;
+  }
+
+  /* Threat Glows */
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(2, 132, 199, 0.25);
+  }
+  .glow-red {
+    box-shadow: 0 0 25px rgba(220, 38, 38, 0.35);
+  }
+  .glow-green {
+    box-shadow: 0 0 20px rgba(5, 150, 105, 0.25);
+  }
+  .glow-amber {
+    box-shadow: 0 0 20px rgba(217, 119, 6, 0.25);
+  }
+
+  /* Corner brackets for tactical module boxes */
+  .corner-bracket {
+    position: relative;
+  }
+  .corner-bracket::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 6px;
+    height: 6px;
+    border-top: 2px solid #38bdf8;
+    border-left: 2px solid #38bdf8;
+  }
+  .corner-bracket::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 6px;
+    height: 6px;
+    border-bottom: 2px solid #38bdf8;
+    border-right: 2px solid #38bdf8;
+  }
+}

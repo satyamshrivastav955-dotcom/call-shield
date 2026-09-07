@@ -84,3 +84,4 @@ CACHEDIR.TAG
 server/datasets/
 *.crdownload
 *.part
+server/.env

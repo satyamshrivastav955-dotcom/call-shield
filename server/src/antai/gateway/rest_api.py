@@ -509,6 +509,13 @@ def debug_models():
         "llm": {"configured": prov.llm,
                 "key_present": bool(prov.groq_api_key),
                 "model": prov.groq_model,
+                # LLM fallback chain (groq -> gemini -> openrouter -> local):
+                # last_backend_used shows which entry actually served the
+                # most recent completion, so a silent fallback is visible.
+                "fallback_chain": list(prov.llm_fallback_chain),
+                "gemini_key_present": bool(prov.gemini_api_key),
+                "openrouter_key_present": bool(prov.openrouter_api_key),
+                "last_backend_used": getattr(hub.get("llm"), "last_backend_used", None),
                 "last_error": last_llm_error()},
     }
 

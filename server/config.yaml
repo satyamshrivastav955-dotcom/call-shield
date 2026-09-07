@@ -65,6 +65,16 @@ providers:
   groq:
     model: "openai/gpt-oss-120b"
     endpoint: "https://api.groq.com/openai/v1/chat/completions"
+  # LLM fallback #2 (Google Gemini; different API shape, see gemini_chat)
+  gemini:
+    model: "gemini-2.0-flash"
+  # LLM fallback #3 (OpenRouter proxies many providers under one key)
+  openrouter:
+    model: "openai/gpt-oss-120b"
+  # First backend with a key + non-empty response wins per call; "local" is
+  # the keyless final fallback (lazy-loads the Qwen GGUF). providers.llm
+  # above now only decides whether the GGUF is preloaded at startup.
+  llm_fallback_chain: ["groq", "gemini", "openrouter", "local"]
 
 pipeline:
   sample_rate: 16000

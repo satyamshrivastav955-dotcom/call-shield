@@ -1,0 +1,151 @@
+# antAI server configuration — AWS BACKUP INSTANCE variant.
+# Copy of ../config.yaml with ONLY the ice: block changed for a public
+# network (real STUN + TURN at the EC2 Elastic IP). Everything else —
+# providers, fallback chain, pipeline, scenarios — stays identical so
+# both machines behave the same way.
+#
+# The one value you MUST edit after first boot: ice.turn_url below —
+# replace 203.0.113.10 with your actual Elastic IP.
+
+server:
+  host: "0.0.0.0"
+  port: 8765
+  debug: true
+
+auth:
+  auto_verify_otp: true        # prototype: skip real SMS, accept any OTP
+  token_ttl_hours: 720
+  otp_len: 6
+
+storage:
+  url: "sqlite:///antai.db"
+  encryption_key: "change-me-please"   # used to derive Fernet key (REPLACE in prod — db.py CRITICAL-warns)
+
+models:
+  root: "models"
+  device: "auto"               # auto | cuda | cpu
+  llm_device: "auto"           # where Qwen runs
+  llm_size: "3b"               # 3b | 1.5b
+
+  # Per-engine enable/disable + weights paths (drop files here manually, or run setup/download_models.py)
+  engines:
+    asr:            { enabled: true }    # backend chosen in `providers.asr` (deepgram)
+    voice_deepfake: { enabled: true }    # backend chosen in `providers.voice_deepfake`
+    speaker_verify: { enabled: true }    # local ECAPA voiceprint (models/speaker_verify)
+    face:           { enabled: true }
+    video_deepfake: { enabled: true }
+    community_vit:  { enabled: true }
+    dicome:         { enabled: true }
+    decof:          { enabled: true }
+    lipsync:        { enabled: true }
+    scam_pattern:   { enabled: true }
+    behavioral:     { enabled: true }
+    urgency:        { enabled: true }
+    intent:         { enabled: true }
+    llm:            { enabled: true }    # backend chosen in `providers.llm` (groq)
+
+# Hosted-API backends — identical to the local rig. Keys live in server/.env
+# (compose env_file mounts it in), never in this file.
+providers:
+  asr: deepgram              # deepgram | faster_whisper
+  voice_deepfake: both       # both | velma | local
+  llm: groq                  # groq | local
+  deepgram:
+    model: nova-2
+    endpoint: "https://api.deepgram.com/v1/listen"
+  velma:
+    model_id: "velma-2-synthetic-voice-detection-streaming"
+    endpoint: "wss://platform.modulate.ai/api/velma-2-synthetic-voice-detection-streaming"
+    auth_style: query
+    config_json: ""
+    response_path: ""
+    eos: ""
+  groq:
+    model: "openai/gpt-oss-120b"
+    endpoint: "https://api.groq.com/openai/v1/chat/completions"
+  # LLM fallback #2 (Google Gemini; different API shape, see gemini_chat)
+  gemini:
+    model: "gemini-2.0-flash"
+  # LLM fallback #3 (OpenRouter proxies many providers under one key)
+  openrouter:
+    model: "openai/gpt-oss-120b"
+  # First backend with a key + non-empty response wins per call; "local" is
+  # the keyless final fallback (lazy-loads the Qwen GGUF).
+  llm_fallback_chain: ["groq", "gemini", "openrouter", "local"]
+
+pipeline:
+  sample_rate: 16000
+  vad_aggressiveness: 2
+  video_fps: 6
+  asr_beam_size: 1
+  asr_language: null
+  min_segment_s: 0.4
+  hangover_s: 0.4
+  max_segment_s: 2.0
+  speaker_sim_threshold: 0.60
+  video_vote_threshold: 2
+  risk_bands:
+    log: 40
+    verify: 70
+  freeze_enabled: true
+  collective_check_enabled: true
+  live_guidance_interval_s: 2.0
+  live_guidance_max_tokens: 180
+  live_signals_interval_s: 0.7
+  eval_interval_s: 2.0
+  report_after: true
+  deepfake_alert_enabled: true
+  voice_alert_threshold: 0.85
+  voice_agreement_bonus: true
+  voice_disagreement_cap: 0.84
+  voice_solo_alert_threshold: 0.95
+  voice_window_s: 4.0
+  voice_long_window_s: 10.0
+  video_alert_threshold: 0.95
+  deepfake_alert_cooldown_s: 15.0
+
+# ── Scenario-based risk thresholds (identical to local) ─────────────────────
+scenarios:
+  routine_call:
+    label: "Routine Call"
+    description: "Standard personal call — alert only on strong signal."
+    risk_verify_at: 75
+    risk_critical_at: 90
+    context_risk_boost: 0
+
+  high_value_txn:
+    label: "High-Value Transaction"
+    description: "Financial transfer or large-value authorization."
+    risk_verify_at: 50
+    risk_critical_at: 70
+    context_risk_boost: 15
+
+  privileged_access:
+    label: "Privileged Access"
+    description: "IT admin, banking credentials, or sensitive data access."
+    risk_verify_at: 40
+    risk_critical_at: 60
+    context_risk_boost: 20
+
+collective:
+  min_flags_before_shortcircuit: 3
+  max_flags_per_account_per_hour: 20
+  reputation_min_age_days: 7
+
+push:
+  provider: "ws"
+  fcm_credentials: null
+
+# ── THE AWS DIFFERENCE ──────────────────────────────────────────────────────
+# Local rig: STUN empty + TURN at 127.0.0.1 reached over adb-reversed USB.
+# AWS: real STUN, TURN at the Elastic IP (plain udp is default and best on
+# a real network; ?transport=tcp only as a fallback through picky firewalls).
+# >>> REPLACE 203.0.113.10 WITH YOUR ELASTIC IP BEFORE FIRST USE <<<
+ice:
+  enabled: true
+  stun_url: "stun:stun.l.google.com:19302"
+  turn_url: "turn:203.0.113.10:3478"
+  turn_username: "antai"
+  turn_password: "antaipass"
+
+log_level: "INFO"

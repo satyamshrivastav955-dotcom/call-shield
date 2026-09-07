@@ -5,6 +5,9 @@ Two independent SSL models run per clip; no single model decides:
        models/voice_deepfake          (primary, strong on EN TTS)
   B. Wav2Vec2 deepfake-voice detector (SSL wav2vec2)
        models/voice_deepfake_cross2   (cross-check, catches non-EN TTS)
+  C. AASIST-L (graph-attention, 85K params — optional ensemble member #3)
+       models/voice_deepfake_aasist/aasist_l.pt
+       (trained by scripts/train_aasist.py; also the on-device model)
 
 Verdict: flag as spoof when max(A, B) > 0.7 (a single model may miss its
 training distribution; agreement of two independent SSL models is the signal).
@@ -167,11 +170,41 @@ class VoiceDeepfakeEngine(BaseEngine):
                 c = self._load_one(cross_dir, device)
                 if c is not None:
                     self._models.append({"name": "w2v", **c})
+            # AASIST-L (optional; fail-soft) — the model-change research pick:
+            # 85K-param graph-attention detector, trained by
+            # scripts/train_aasist.py, and the one that ships on-device
+            # (spoof_aasist_l.int8.onnx). Absent file = ensemble unchanged.
+            a = self._load_aasist(Path(cfg.models.root) / "voice_deepfake_aasist",
+                                  device)
+            if a is not None:
+                self._models.append(a)
             self.device = device
             return True
         except Exception as e:
             log.warning("voice deepfake load failed: %s", e)
             return False
+
+    def _load_aasist(self, model_dir: Path, device: str) -> dict | None:
+        ckpt = model_dir / "aasist_l.pt"
+        if not ckpt.exists():
+            return None
+        try:
+            import torch
+            from ._aasist import SPOOF_INDEX, AASISTL
+            model = AASISTL()
+            state = torch.load(ckpt, map_location="cpu", weights_only=True)
+            model.load_state_dict(state if "state_dict" not in state else state["state_dict"])
+            model.eval()
+            if device == "cuda":
+                model = model.to("cuda")
+            log.info("AASIST-L loaded as ensemble member #3 (%s)", ckpt)
+            return {"name": "aasist", "model": model,
+                    "spoof_index": SPOOF_INDEX,
+                    "processor": None,       # raw-waveform input, no HF processor
+                    "raw_waveform": True}
+        except Exception as e:
+            log.warning("AASIST-L load failed (ignored, ensemble continues): %s", e)
+            return None
 
     def _load_one(self, model_dir: Path, device: str) -> dict | None:
         try:
@@ -358,8 +391,13 @@ class VoiceDeepfakeEngine(BaseEngine):
                 clip = (context_audio if (m["name"] == "asv5"
                                           and context_audio is not None)
                         else audio)
-                inputs = m["processor"](clip, sampling_rate=sample_rate,
-                                        return_tensors="pt")
+                if m.get("raw_waveform"):
+                    # AASIST-L: raw waveform [1, T] straight in, no HF processor
+                    inputs = {"audio": torch.from_numpy(
+                        clip.astype("float32")).unsqueeze(0)}
+                else:
+                    inputs = m["processor"](clip, sampling_rate=sample_rate,
+                                            return_tensors="pt")
                 if self._local_device == "cuda":
                     inputs = {k: (v.half() if v.dtype == torch.float32 else v)
                               .to("cuda") for k, v in inputs.items()}
