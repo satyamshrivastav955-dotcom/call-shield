@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.websocket)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.onnxruntime.android)
+    implementation(libs.kotlin.reflect)
     implementation(libs.gson)
     implementation(libs.webrtc)
     implementation(libs.hilt.android)

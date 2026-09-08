@@ -9,12 +9,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.codewithkael.simplecall.R
+import com.codewithkael.simplecall.ai.TextEngines
 import com.codewithkael.simplecall.remote.antai.Conversation
 import com.codewithkael.simplecall.ui.components.RiskBadge
 import com.codewithkael.simplecall.ui.components.isNoteworthy
@@ -28,35 +30,45 @@ import com.codewithkael.simplecall.utils.TimeFormat
 @Composable
 fun ConversationListScreen(
     vm: MessagesViewModel,
-    onOpenThread: (String) -> Unit
+    onOpenThread: (String) -> Unit,
+    onSignIn: () -> Unit = {}
 ) {
     val conversations by vm.conversations.collectAsState()
+    val loggedIn by vm.loggedIn.collectAsState()
     var showNew by remember { mutableStateOf(false) }
 
-    Box(Modifier.fillMaxSize()) {
-        if (conversations.isEmpty()) {
-            EmptyMessages()
-        } else {
-            LazyColumn(Modifier.fillMaxSize()) {
-                items(conversations, key = { it.peerPhone }) { convo ->
-                    ConversationRow(convo) { onOpenThread(convo.peerPhone) }
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(start = 84.dp)
-                    )
-                }
-            }
+    Column(Modifier.fillMaxSize()) {
+        // Optional server features banner. Offline scanning is already active
+        // below — this is an upgrade path, never a blocker.
+        if (!loggedIn) {
+            SignInBanner(onSignIn = onSignIn)
         }
 
-        FloatingActionButton(
-            onClick = { showNew = true },
-            containerColor = MaterialTheme.colorScheme.secondary,
-            contentColor = MaterialTheme.colorScheme.onSecondary,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(20.dp)
-        ) {
-            Icon(painterResource(R.drawable.ic_message), contentDescription = "New message")
+        Box(Modifier.weight(1f)) {
+            if (conversations.isEmpty()) {
+                EmptyMessages()
+            } else {
+                LazyColumn(Modifier.fillMaxSize()) {
+                    items(conversations, key = { it.peerPhone }) { convo ->
+                        ConversationRow(convo) { onOpenThread(convo.peerPhone) }
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.padding(start = 84.dp)
+                        )
+                    }
+                }
+            }
+
+            FloatingActionButton(
+                onClick = { showNew = true },
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(20.dp)
+            ) {
+                Icon(painterResource(R.drawable.ic_message), contentDescription = "New message")
+            }
         }
     }
 
@@ -72,7 +84,56 @@ fun ConversationListScreen(
 }
 
 @Composable
+private fun SignInBanner(onSignIn: () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_shield_check),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "SMS scam scan is ON (on-device). Sign in for in-app chat.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = onSignIn, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                Text("Sign in")
+            }
+        }
+    }
+}
+
+@Composable
 private fun ConversationRow(convo: Conversation, onClick: () -> Unit) {
+    // Offline scan (Bug 1): even without sign-in/server, the last message is
+    // scored on-device so a risky thread still shows a badge. Labeled "local"
+    // so provenance stays honest (server verdicts use the normal RiskBadge).
+    val offlineVerdict = remember(convo.lastMessage?.body) {
+        TextEngines.scamHeuristic(convo.lastMessage?.body ?: "")
+    }
+    val offlineRisky = offlineVerdict.prob >= 0.55f
+    // Provenance for the server-band badge: only label "on-device" when the
+    // worst band is driven SOLELY by locally-scored messages (Bug 1 fallback).
+    // A server verdict at that band leaves it unlabeled.
+    val worstOnDevice = remember(convo.messages) {
+        val wb = convo.worstBand
+        val atWorst = convo.messages.filter { it.band == wb }
+        atWorst.isNotEmpty() && atWorst.all { it.onDevice }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -111,6 +172,23 @@ private fun ConversationRow(convo: Conversation, onClick: () -> Unit) {
                 if (convo.worstBand.isNoteworthy()) {
                     Spacer(Modifier.width(6.dp))
                     RiskBadge(band = convo.worstBand, compact = true)
+                    if (worstOnDevice) {
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            "· on-device",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                        )
+                    }
+                } else if (offlineRisky) {
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "⚠ ${offlineVerdict.type ?: "scam"}? · on-device",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                        maxLines = 1,
+                    )
                 }
             }
             Spacer(Modifier.height(2.dp))
@@ -154,7 +232,8 @@ private fun EmptyMessages() {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "Start a chat, or grant SMS access so your texts appear here and get scanned for scams.",
+            "Grant SMS access so your texts appear here and get scanned for scams on-device. " +
+                "No account needed.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 8.dp)

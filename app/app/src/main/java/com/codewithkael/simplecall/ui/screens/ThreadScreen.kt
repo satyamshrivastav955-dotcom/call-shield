@@ -190,7 +190,17 @@ private fun MessageBubble(msg: ChatMessage, isExpanded: Boolean, onToggle: () ->
                     .clickable(onClick = onToggle),
                 horizontalAlignment = Alignment.Start
             ) {
-                RiskBadge(band = msg.band)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RiskBadge(band = msg.band)
+                    if (msg.onDevice) {
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            "on-device",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
                 if (isExpanded) {
                     msg.verdict?.takeIf { it.isNotBlank() }?.let {
                         Text(

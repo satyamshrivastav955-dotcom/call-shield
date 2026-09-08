@@ -4,10 +4,14 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codewithkael.simplecall.remote.socket.SignalMessageModel
 import com.codewithkael.simplecall.remote.socket.SignalMessageType
+import com.codewithkael.simplecall.ai.Explainer
+import com.codewithkael.simplecall.shield.ShieldArmedState
+import com.codewithkael.simplecall.shield.TrustedStore
 import com.codewithkael.simplecall.remote.socket.SignalMessageType.AcceptCall
 import com.codewithkael.simplecall.remote.socket.SignalMessageType.Answer
 import com.codewithkael.simplecall.remote.socket.SignalMessageType.EndCall
@@ -16,6 +20,7 @@ import com.codewithkael.simplecall.remote.socket.SignalMessageType.Offer
 import com.codewithkael.simplecall.remote.socket.SignalMessageType.RejectCall
 import com.codewithkael.simplecall.remote.socket.SignalMessageType.StartCall
 import com.codewithkael.simplecall.remote.socket.SignalMessageType.UserOnline
+import com.codewithkael.simplecall.remote.socket.SignalMessageType.Welcome
 import com.codewithkael.simplecall.remote.socket.SocketClient
 import com.codewithkael.simplecall.data.MessagesRepository
 import com.codewithkael.simplecall.remote.antai.AiInsight
@@ -47,11 +52,13 @@ import com.codewithkael.simplecall.webrtc.RTCClientImpl
 import com.codewithkael.simplecall.webrtc.WebRTCFactory
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
 import org.webrtc.SessionDescription
@@ -67,6 +74,9 @@ class MainViewModel @Inject constructor(
     private val webrtcFactory: WebRTCFactory,
     private val gson :Gson,
     private val antaiRest: AntaiRestClient,
+    // #11: on-device verdict store. Home's "recent incident" must include local
+    // Shield verdicts, not only server ones — an offline detection still surfaces.
+    private val store: TrustedStore,
     // Read-only here, and only for the verification event bridge below: the chat
     // socket lives in this singleton and is the socket the server addresses a
     // button-initiated verify.result to. Nothing in the call path uses it.
@@ -96,6 +106,18 @@ class MainViewModel @Inject constructor(
     // Deepfake pause-and-alert: non-null while the call is paused pending a
     // user decision ("End call" / "Resume anyway").
     val deepfakeAlertState: MutableStateFlow<DeepfakeAlert?> = MutableStateFlow(null)
+
+    // Phase 2.3 — when non-null, the paused-call dialog shows a countdown that
+    // auto-ends this (in-app WebRTC) call after N seconds unless the user cancels.
+    // Set ONLY for a critical / high-risk verdict (band == "critical" or risk >=
+    // AUTO_HANGUP_RISK): the call is one we fully own, so ending it is reliable.
+    // A merely-suspicious (verify) call leaves this null → alert without countdown.
+    val deepfakeAutoHangupState: MutableStateFlow<Int?> = MutableStateFlow(null)
+
+    // Phase 2.3 auto-hangup tuning: engage at risk >= 80/100 (or a critical band)
+    // and count down 5 real seconds before ending the in-app call.
+    private val AUTO_HANGUP_RISK = 80.0
+    private val AUTO_HANGUP_SECONDS = 5
 
     // Voiceprint cross-check of the live call audio against the peer's enrolled
     // voiceprint — the second, independent opinion offered on an AI-voice alert.
@@ -148,6 +170,17 @@ class MainViewModel @Inject constructor(
     init {
         rtcAudioManager.setDefaultAudioDevice(RTCAudioManager.AudioDevice.SPEAKER_PHONE)
 
+        // Bug 5 fix: when the on-device Shield service is armed, the user IS
+        // protected locally even if the analysis server is unreachable — the
+        // mode chip must say ON_DEVICE, not OFFLINE (the old UI read "Offline"
+        // as "unprotected" whenever the socket dropped).
+        viewModelScope.launch {
+            ShieldArmedState.armed.collect { armed ->
+                if (armed) protectionMode.value = ProtectionMode.ON_DEVICE
+                else refreshProtectionMode()
+            }
+        }
+
         // Bridge for the "Verify caller" outcome. The REST request is authenticated
         // as the phone/OTP user, so the server pushes its verify.result to THAT
         // user's socket — the chat socket — while the call tap is registered under a
@@ -186,9 +219,31 @@ class MainViewModel @Inject constructor(
 
     fun loadLastIncident() {
         viewModelScope.launch {
-            antaiRest.listVerdicts().onSuccess { list ->
-                lastIncident.value = list.maxByOrNull { it.createdAt }
+            // Server verdicts — may be empty or unreachable when offline.
+            val server = antaiRest.listVerdicts().getOrNull()?.maxByOrNull { it.createdAt }
+            // On-device Shield verdicts live only on the phone. Without merging them
+            // here, an offline detection never surfaces on Home (#11). Read the
+            // newest local verdict off the IO dispatcher (file read).
+            val localNewest = withContext(Dispatchers.IO) {
+                store.recentVerdictsDetailed(limit = 1).firstOrNull()
+            }?.let { v ->
+                IncidentItem(
+                    id = -v.ts, // negative so it can't collide with server ids
+                    kind = "on-device",
+                    riskScore = v.risk.toDouble(),
+                    band = v.band,
+                    // #10: humanize the raw fusion token — never leak "voice_deepfake"
+                    // into the verdict line the card renders.
+                    verdict = (v.hard.firstOrNull() ?: v.soft.firstOrNull())
+                        ?.let { Explainer.humanizeSignal(it) } ?: "risk signal",
+                    why = v.summary,
+                    action = "",
+                    scamType = null,
+                    createdAt = v.ts,
+                )
             }
+            // Newest across both sources wins the single Home slot.
+            lastIncident.value = listOfNotNull(server, localNewest).maxByOrNull { it.createdAt }
         }
     }
 
@@ -238,12 +293,23 @@ class MainViewModel @Inject constructor(
                 override fun onRemoteSocketClientClosed() {
                     // Connection dropped -> return to the server screen so the user can reconnect.
                     setConnectionState(New)
-                    protectionMode.value = ProtectionMode.OFFLINE
+                    // Bug 5: an armed on-device Shield still protects locally even
+                    // with the analysis server unreachable — keep the chip ON_DEVICE,
+                    // not OFFLINE, so a dropped socket never reads as "unprotected".
+                    // The armed-state collector only fires on arm/disarm, so this
+                    // socket-close path must re-check ShieldArmedState itself.
+                    protectionMode.value =
+                        if (ShieldArmedState.armed.value) ProtectionMode.ON_DEVICE
+                        else ProtectionMode.OFFLINE
                 }
 
                 override fun onRemoteSocketClientConnectionError(e: Exception?) {
                     setConnectionState(New)
-                    protectionMode.value = ProtectionMode.OFFLINE
+                    // Bug 5: same rule as onRemoteSocketClientClosed — an armed
+                    // Shield keeps ON_DEVICE protection when the server is down.
+                    protectionMode.value =
+                        if (ShieldArmedState.armed.value) ProtectionMode.ON_DEVICE
+                        else ProtectionMode.OFFLINE
                     viewModelScope.launch {
                         eventState.emit(
                             "Can't reach server at ${serverHost.value}:${Constants.SIGNALING_PORT}. " +
@@ -259,7 +325,8 @@ class MainViewModel @Inject constructor(
     }
 
     private fun handleIncomingMessage(message: SignalMessageModel) {
-        when (message.type) {
+        val type = message.type ?: return
+        when (type) {
             UserOnline -> handleUserOnline(message)
             SignalMessageType.UserOffline -> handleUserOffline(message)
             StartCall -> handleStartCall(message)
@@ -269,6 +336,7 @@ class MainViewModel @Inject constructor(
             Answer -> handleAnswer(message)
             ICE -> handleICE(message)
             EndCall -> handleEndCall()
+            Welcome -> { Log.d("SOCKET", "received welcome from signaling server") }
             else -> {}
         }
     }
@@ -697,15 +765,26 @@ class MainViewModel @Inject constructor(
     private fun pauseForDeepfakeAlert(alert: DeepfakeAlert) {
         if (deepfakeAlertState.value != null) return   // already paused
         setRemoteMediaEnabled(false)
+        // Phase 2.3 — engage the auto-hangup countdown ONLY for a critical /
+        // high-risk verdict. DeepfakeAlert carries no normalized risk, so read the
+        // live band/risk from the same signals feed that drives the in-call card.
+        // A verify-band (merely-suspicious) alert leaves the countdown null so the
+        // user decides; a critical one auto-ends this in-app call we fully own.
+        val insight = aiInsightState.value
+        val critical = insight?.band == "critical" ||
+            (insight?.riskScore ?: 0.0) >= AUTO_HANGUP_RISK
+        deepfakeAutoHangupState.value = if (critical) AUTO_HANGUP_SECONDS else null
         deepfakeAlertState.value = alert
     }
 
     fun resumeAfterDeepfakeAlert() {
         setRemoteMediaEnabled(true)
+        deepfakeAutoHangupState.value = null
         deepfakeAlertState.value = null
     }
 
     fun endCallFromDeepfakeAlert() {
+        deepfakeAutoHangupState.value = null
         deepfakeAlertState.value = null
         endCall()
     }
@@ -777,6 +856,7 @@ class MainViewModel @Inject constructor(
         stopAiTap()
         // P1.7: dismiss any lingering risk alert when the call ends
         riskNotificationManager.dismissRiskNotification()
+        deepfakeAutoHangupState.value = null
         deepfakeAlertState.value = null
         remoteMediaStream = null
         userMicEnabled = true

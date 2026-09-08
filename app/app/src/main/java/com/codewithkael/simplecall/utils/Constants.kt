@@ -11,7 +11,7 @@ object Constants {
     // e.g. 192.168.1.23). You can also change this at runtime on the app's home
     // screen (it is saved on the device), so you never need to rebuild just because
     // the laptop's IP changed. This default is only the pre-filled value.
-    const val DEFAULT_SERVER_HOST = "192.168.1.100"
+    const val DEFAULT_SERVER_HOST = "10.139.168.151"
 
     // Port the antAI Python server (FastAPI: LangGraph pipeline + local LLM)
     // listens on. It runs on the SAME laptop as the Node signaling server, so

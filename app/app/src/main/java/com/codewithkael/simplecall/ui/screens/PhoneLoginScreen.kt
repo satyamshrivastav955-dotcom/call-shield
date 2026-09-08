@@ -21,11 +21,21 @@ import com.codewithkael.simplecall.ui.viewmodel.MessagesViewModel
  * the calling stack is unaffected (it uses a separate random USER_ID).
  */
 @Composable
-fun PhoneLoginScreen(vm: MessagesViewModel) {
+fun PhoneLoginScreen(vm: MessagesViewModel, onClose: () -> Unit = {}) {
     val state by vm.login.collectAsState()
     val phone = remember { mutableStateOf("") }
     val otp = remember { mutableStateOf("") }
     val name = remember { mutableStateOf("") }
+
+    // Success: leave the login sub-screen back to the conversation list.
+    LaunchedEffect(state.phase) {
+        if (state.phase == LoginPhase.DONE) onClose()
+    }
+    // A previously-saved session can be logged out from here; leave on that too.
+    val loggedIn by vm.loggedIn.collectAsState()
+    LaunchedEffect(loggedIn) {
+        if (loggedIn) onClose()
+    }
 
     // prefill dev OTP when the server returns it (auto-verify mode)
     LaunchedEffect(state.devOtp) {
@@ -39,6 +49,18 @@ fun PhoneLoginScreen(vm: MessagesViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // Always-available escape hatch: sign-in is optional, never a dead end.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            IconButton(onClick = onClose) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_arrow_back),
+                    contentDescription = "Back to messages"
+                )
+            }
+        }
         Box(
             modifier = Modifier
                 .size(80.dp)
@@ -61,7 +83,7 @@ fun PhoneLoginScreen(vm: MessagesViewModel) {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "Sign in with your phone number to send analyzed messages and scan incoming texts for scams.",
+            "Optional: sign in with your phone number for in-app chat. SMS scam scanning already works on-device without this.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -111,7 +133,15 @@ fun PhoneLoginScreen(vm: MessagesViewModel) {
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth()
             )
-            if (!state.devOtp.isNullOrBlank()) {
+            if (state.debugOffline) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Offline debug sign-in: code ${state.devOtp} creates a LOCAL debug " +
+                        "identity only — it is not verified by any server.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else if (!state.devOtp.isNullOrBlank()) {
                 Spacer(Modifier.height(8.dp))
                 Text(
                     "Dev mode: code ${state.devOtp} prefilled",

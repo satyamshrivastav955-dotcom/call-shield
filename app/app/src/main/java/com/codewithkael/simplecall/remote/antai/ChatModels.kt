@@ -71,7 +71,14 @@ data class ChatMessage(
     val why: String? = null,
     val action: String? = null,
     val scamType: String? = null,
-    val analysisPending: Boolean = false
+    val analysisPending: Boolean = false,
+    /**
+     * Bug 1 — provenance. True when [riskScore]/[verdict] were produced by the
+     * on-device scam heuristics (TextEngines) because the server was unreachable
+     * or the user isn't signed in, so the UI can label the verdict "on-device"
+     * instead of implying a server judgment. Server verdicts leave this false.
+     */
+    val onDevice: Boolean = false
 ) {
     val band: RiskBand get() = RiskBand.of(riskScore, verdict, analysisPending)
 }
@@ -116,7 +123,9 @@ data class NotificationEvent(
     val why: String? = null,        // reason it was flagged
     val action: String? = null,     // advice: what to do next
     val scamType: String? = null,
-    val analysisPending: Boolean = false
+    val analysisPending: Boolean = false,
+    /** See [ChatMessage.onDevice] — true for local (server-unreachable) scoring. */
+    val onDevice: Boolean = false
 ) {
     val band: RiskBand get() = RiskBand.of(riskScore, verdict, analysisPending)
 }

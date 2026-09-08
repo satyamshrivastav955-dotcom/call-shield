@@ -42,6 +42,8 @@
     <string name="btn_view_details">विवरण देखें</string>
     <string name="btn_show_less">कम दिखाएं</string>
     <string name="btn_draft_fir">FIR / शिकायत का प्रारूप बनाएं</string>
+    <string name="btn_file_complaint">शिकायत दर्ज करें (1930)</string>
+    <string name="btn_close">बंद करें</string>
     <string name="btn_share_result">परिणाम शेयर करें</string>
     <string name="label_call_analysis">कॉल विश्लेषण</string>
     <string name="label_recommended_action">सुझाव: %1$s</string>
@@ -56,9 +58,9 @@
     <string name="mode_connected">कनेक्टेड</string>
     <string name="mode_local_only">लोकल-ओनली</string>
 
-    <!-- Recording check flow -->
-    <string name="card_check_recording_title">रिकॉर्डिंग की जांच करें</string>
-    <string name="card_check_recording_desc">फॉरवर्ड किए गए ऑडियो या वॉइस नोट को डीपफेक और स्कैम के लिए स्कैन करें</string>
+    <!-- Recording check flow (SERVER path) -->
+    <string name="card_check_recording_title">फ़ॉरवर्ड किया क्लिप जांचें (सर्वर)</string>
+    <string name="card_check_recording_desc">फ़ॉरवर्ड किए वॉइस नोट या क्लिप को पूरी डीपफेक और स्कैम जांच के लिए antAI सर्वर पर भेजें (कनेक्शन ज़रूरी)</string>
     <string name="btn_pick_audio">ऑडियो फ़ाइल चुनें</string>
     <string name="recording_analyzing">ऑडियो का विश्लेषण जारी है…</string>
     <string name="recording_success">विश्लेषण पूरा हुआ</string>

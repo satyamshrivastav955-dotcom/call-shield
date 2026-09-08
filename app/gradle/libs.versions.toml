@@ -41,6 +41,10 @@ hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-com
 websocket = { group = "org.java-websocket", name = "Java-WebSocket", version.ref = "webSocket" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 onnxruntime-android = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxruntime" }
+# Used by SherpaOnnxTranscriber to build sherpa's nested config via KFunction.callBy
+# (so data-class defaults fill everything we don't set). Version tracks the Kotlin
+# plugin, so this coordinate is exact — not a guess.
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 
 
 [plugins]

@@ -69,6 +69,9 @@ fun HomeScreen() {
 
     var tab by rememberSaveable { mutableStateOf(HomeTab.CALLS) }
     var openThread by rememberSaveable { mutableStateOf<String?>(null) }
+    // Optional in-app chat sign-in (in-app messaging needs the server; SMS
+    // scanning never did). Keep it dismissible so the tab is never dead-ended.
+    var showLogin by rememberSaveable { mutableStateOf(false) }
     // Voice registration is a sub-screen of Guard rather than a fourth tab: it is
     // set up once and then only revisited occasionally, so it doesn't earn
     // permanent space in the bottom bar.
@@ -87,6 +90,7 @@ fun HomeScreen() {
     }
 
     // ----- SMS / notification permission onboarding (messaging only) -----
+    // No login requirement: SMS + on-device scanning work for anyone (Phase 4.2).
     val smsPermissions = remember {
         buildList {
             add(Manifest.permission.READ_SMS)
@@ -102,9 +106,9 @@ fun HomeScreen() {
     }
     var askedSms by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(loggedIn, tab) {
+    LaunchedEffect(tab) {
         val messaging = tab == HomeTab.MESSAGES || tab == HomeTab.GUARD
-        if (loggedIn && messaging && !askedSms) {
+        if (messaging && !askedSms) {
             val granted = ContextCompat.checkSelfPermission(
                 context, Manifest.permission.READ_SMS
             ) == PackageManager.PERMISSION_GRANTED
@@ -116,6 +120,9 @@ fun HomeScreen() {
     // System back inside a thread returns to the conversation list.
     BackHandler(enabled = tab == HomeTab.MESSAGES && openThread != null) {
         openThread = null
+    }
+    BackHandler(enabled = tab == HomeTab.MESSAGES && showLogin) {
+        showLogin = false
     }
     BackHandler(enabled = tab == HomeTab.GUARD && showVoiceprint) {
         showVoiceprint = false
@@ -185,40 +192,37 @@ fun HomeScreen() {
                 .padding(padding)
         ) {
             when (tab) {
-                HomeTab.CALLS -> MainScreen()
+                HomeTab.CALLS -> MainScreen(onOpenIncidents = { tab = HomeTab.INCIDENTS })
 
                 HomeTab.MESSAGES -> {
-                    if (!loggedIn) {
-                        PhoneLoginScreen(messagesVm)
-                    } else {
-                        val peer = openThread
-                        if (peer == null) {
-                            ConversationListScreen(
-                                vm = messagesVm,
-                                onOpenThread = { openThread = it }
-                            )
-                        } else {
-                            ThreadScreen(
-                                vm = messagesVm,
-                                peerPhone = peer,
-                                onBack = { openThread = null }
-                            )
-                        }
+                    // Phase 4.2: SMS threads + on-device scam scanning never
+                    // require sign-in. Optional server sign-in (in-app chat)
+                    // is reachable from the list header and never blocks use.
+                    when {
+                        showLogin -> PhoneLoginScreen(vm = messagesVm, onClose = { showLogin = false })
+                        openThread != null -> ThreadScreen(
+                            vm = messagesVm,
+                            peerPhone = openThread!!,
+                            onBack = { openThread = null }
+                        )
+                        else -> ConversationListScreen(
+                            vm = messagesVm,
+                            onOpenThread = { openThread = it },
+                            onSignIn = { showLogin = true }
+                        )
                     }
                 }
 
                 HomeTab.GUARD -> {
-                    // Shield is fully on-device: no login needed.
-                    if (showShield) com.codewithkael.simplecall.shield.ShieldScreen(
-                        onBack = { showShield = false },
-                    )
-                    else if (!loggedIn) PhoneLoginScreen(messagesVm)
-                    else if (showVoiceprint) VoiceprintScreen(onBack = { showVoiceprint = false })
-                    else NotificationGuardScreen(
-                        vm = messagesVm,
-                        onOpenVoiceprint = { showVoiceprint = true },
-                        onOpenShield = { showShield = true },
-                    )
+                    // Shield is 100% on-device and serverless: no login or server connection required.
+                    if (showVoiceprint) {
+                        VoiceprintScreen(onBack = { showVoiceprint = false })
+                    } else {
+                        com.codewithkael.simplecall.shield.ShieldScreen(
+                            onOpenVoiceprint = { showVoiceprint = true },
+                            onBack = { tab = HomeTab.CALLS }
+                        )
+                    }
                 }
 
                 HomeTab.INCIDENTS -> IncidentHistoryScreen()

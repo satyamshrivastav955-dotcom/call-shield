@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+    <!-- Phase 2.2: haptic alert (triple-vibration waveform) on scam/clone detection -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
 
     <!-- antAI messaging + notification-guard (additive; unrelated to calling) -->
     <uses-permission android:name="android.permission.READ_SMS" />
@@ -22,6 +24,13 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <!-- Phase 2.3: one-tap hang-up of a CELLULAR call via TelecomManager.endCall().
+         This is ONLY functional when the user has made antAI the default phone app
+         (or granted it the call-screening role); otherwise CellularCallController
+         reports it can't and the overlay tells the user to hang up manually — it
+         NEVER fakes a disconnect. No effect on third-party VoIP (WhatsApp etc.). -->
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
 
     <application
         android:allowBackup="true"

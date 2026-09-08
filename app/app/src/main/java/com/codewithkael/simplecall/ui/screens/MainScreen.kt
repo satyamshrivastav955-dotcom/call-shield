@@ -48,7 +48,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun MainScreen() {
+fun MainScreen(onOpenIncidents: () -> Unit = {}) {
     val viewModel: MainViewModel = hiltViewModel()
     val context = LocalContext.current
     val requestPermissionLauncher = rememberLauncherForActivityResult(
@@ -148,7 +148,7 @@ fun MainScreen() {
                 )
 
                 // 5. Recent Protection Activity / Empty state (Task A1)
-                RecentIncidentSection(incident = lastIncident)
+                RecentIncidentSection(incident = lastIncident, onViewAll = onOpenIncidents)
 
                 Spacer(Modifier.height(16.dp))
             }
@@ -223,9 +223,11 @@ fun MainScreen() {
         // Deepfake pause-and-alert modal
         val deepfakeAlert = viewModel.deepfakeAlertState.collectAsState()
         val voiceprint = viewModel.voiceprintState.collectAsState()
+        val autoHangup = viewModel.deepfakeAutoHangupState.collectAsState()
         deepfakeAlert.value?.let { alert ->
             DeepfakeAlertDialog(
                 alert = alert,
+                autoHangupSeconds = autoHangup.value,
                 voiceprint = voiceprint.value,
                 onCrossVerify = { viewModel.crossVerifyVoiceprint() },
                 onResume = { viewModel.resumeAfterDeepfakeAlert() },
@@ -238,6 +240,7 @@ fun MainScreen() {
 /**
  * Hero component replacing dev-centric headers with a proud guardian product statement.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ProtectionHero(
     mode: ProtectionMode,
@@ -317,10 +320,13 @@ private fun ProtectionHero(
 
             Spacer(Modifier.height(12.dp))
 
-            // Badges row: Protection Mode Chip (A4) + Connection Chip + Scenario Chip
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+            // Badges (#11): FlowRow so the Mode + Connection + Scenario chips wrap
+            // to a second line on narrow (<380dp) screens instead of clipping off
+            // the right edge. Centered, with row + line spacing.
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 // Persistent Mode Chip (tap opens explanation bottom sheet)
                 RiskStatusChip(mode = mode)
@@ -510,18 +516,32 @@ private fun CheckRecordingCard(
  * Task A1: Recent incident or empty state card.
  */
 @Composable
-private fun RecentIncidentSection(incident: IncidentItem?) {
+private fun RecentIncidentSection(incident: IncidentItem?, onViewAll: () -> Unit = {}) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(
-            text = "Recent Incident / हालिया चेतावनी",
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 4.dp)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Recent Incident / हालिया चेतावनी",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+            // #11: discoverable path to the full incident log (Incidents tab).
+            // The card itself already expands in place on tap for quick detail.
+            TextButton(
+                onClick = onViewAll,
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+            ) {
+                Text("View all →", style = MaterialTheme.typography.labelMedium)
+            }
+        }
 
         if (incident != null) {
             val formattedTime = formatRecentTime(incident.createdAt)

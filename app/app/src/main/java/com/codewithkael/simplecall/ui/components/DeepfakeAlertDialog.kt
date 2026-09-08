@@ -19,15 +19,23 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.codewithkael.simplecall.R
 import com.codewithkael.simplecall.remote.antai.DeepfakeAlert
 import com.codewithkael.simplecall.remote.antai.VoiceprintResult
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 /**
@@ -38,10 +46,20 @@ import kotlin.math.roundToInt
  * headline, explicit safe action first), not a security-theatre alert. Everything
  * shown comes off the wire — headline, explanation, confidence and which checks
  * produced it. Nothing is invented client-side.
+ *
+ * Phase 2.3 — AUTO-TERMINATION: when [autoHangupSeconds] is non-null (the caller
+ * sets it only for a CRITICAL / high-risk verdict on the in-app WebRTC call we
+ * fully own and can end reliably), the dialog widens into a prominent countdown
+ * and auto-invokes [onEndCall] when it reaches zero. Any deliberate engagement
+ * cancels the countdown: tapping the voiceprint cross-check pauses it (the user is
+ * investigating), and "resume anyway" dismisses the whole dialog. A merely-
+ * suspicious (verify) call passes [autoHangupSeconds] = null, so it shows the same
+ * alert WITHOUT a countdown and never auto-hangs-up.
  */
 @Composable
 fun DeepfakeAlertDialog(
     alert: DeepfakeAlert,
+    autoHangupSeconds: Int? = null,
     voiceprint: VoiceprintResult? = null,
     onCrossVerify: () -> Unit = {},
     onResume: () -> Unit,
@@ -56,17 +74,80 @@ fun DeepfakeAlertDialog(
         }
     }
 
-    Dialog(onDismissRequest = { /* must choose explicitly */ }) {
+    // Phase 2.3 auto-hangup countdown. `cancelled` is flipped by any deliberate
+    // engagement (cross-check), which stops the timer but keeps the dialog so the
+    // user can finish investigating; "resume anyway" dismisses the dialog entirely
+    // (which also tears down the LaunchedEffect). The timer counts real seconds and
+    // fires onEndCall exactly once at zero.
+    var cancelled by remember { mutableStateOf(false) }
+    var remaining by remember { mutableIntStateOf(autoHangupSeconds ?: 0) }
+    val countdownActive = autoHangupSeconds != null && autoHangupSeconds > 0 && !cancelled
+
+    LaunchedEffect(autoHangupSeconds, cancelled) {
+        if (autoHangupSeconds == null || autoHangupSeconds <= 0 || cancelled) return@LaunchedEffect
+        remaining = autoHangupSeconds
+        while (remaining > 0) {
+            delay(1000L)
+            remaining -= 1
+        }
+        onEndCall()
+    }
+
+    // Deliberate engagement with the second-opinion check cancels the auto-hangup.
+    val onCrossVerifyGuarded: () -> Unit = {
+        cancelled = true
+        onCrossVerify()
+    }
+
+    Dialog(
+        onDismissRequest = { /* must choose explicitly */ },
+        properties = DialogProperties(usePlatformDefaultWidth = !countdownActive)
+    ) {
         Surface(
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp,
-            modifier = Modifier.fillMaxWidth()
+            modifier = if (countdownActive) Modifier.fillMaxWidth(0.94f) else Modifier.fillMaxWidth()
         ) {
             Column(
                 Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Phase 2.3 — prominent auto-hangup countdown (critical/high-risk only).
+                if (countdownActive) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.error,
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                "Ending call automatically in",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onError
+                            )
+                            Text(
+                                "${remaining}s",
+                                style = MaterialTheme.typography.displaySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onError
+                            )
+                            Text(
+                                "High risk of a scam or AI-cloned voice. " +
+                                    "Tap “resume anyway” to stay on the line.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onError
+                            )
+                        }
+                    }
+                }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -131,7 +212,7 @@ fun DeepfakeAlertDialog(
                     VoiceprintSection(
                         result = voiceprint,
                         enabled = alert.canCrossVerify,
-                        onCrossVerify = onCrossVerify
+                        onCrossVerify = onCrossVerifyGuarded
                     )
                 }
 
@@ -146,7 +227,10 @@ fun DeepfakeAlertDialog(
                         shape = MaterialTheme.shapes.small,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("End call", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            if (countdownActive) "End call now" else "End call",
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                     OutlinedButton(
                         onClick = onResume,

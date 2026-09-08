@@ -121,6 +121,11 @@ fun RiskResultCard(
     signals: RiskSignalsData? = null,
     reasons: List<String> = emptyList(),
     initiallyExpanded: Boolean = false,
+    // When non-null, tapping the card (or the footer link) invokes this instead of
+    // toggling the inline expand — used by Incident History to open a full-screen
+    // inspection dialog. Every existing caller omits it, so their inline expand
+    // behaviour is unchanged.
+    onClick: (() -> Unit)? = null,
     headerTrailingContent: (@Composable () -> Unit)? = null,
     footerActionContent: (@Composable () -> Unit)? = null,
     extraExpandedContent: (@Composable () -> Unit)? = null
@@ -142,7 +147,7 @@ fun RiskResultCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { expanded = !expanded },
+            .clickable { if (onClick != null) onClick() else expanded = !expanded },
         color = MaterialTheme.colorScheme.surface,
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 2.dp,
@@ -359,12 +364,12 @@ fun RiskResultCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (expanded) stringResource(R.string.btn_show_less)
+                    text = if (onClick == null && expanded) stringResource(R.string.btn_show_less)
                            else stringResource(R.string.btn_view_details),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable { expanded = !expanded }
+                    modifier = Modifier.clickable { if (onClick != null) onClick() else expanded = !expanded }
                 )
                 footerActionContent?.invoke()
             }

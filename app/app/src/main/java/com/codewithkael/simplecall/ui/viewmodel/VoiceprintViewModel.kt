@@ -308,6 +308,15 @@ class VoiceprintViewModel @Inject constructor(
             val hash = flow.phoneHash ?: store.hashPhone(flow.phone)
             store.setVoiceprint(hash, embedding)
             pipeline.enrolledVoiceprint = embedding
+            // Per-contact (#4): keep the Shield's labeled print list current
+            // and focus verification on the member just enrolled.
+            try {
+                pipeline.voiceprints = store.loadContacts()
+                    .filter { it.voiceprint != null }
+                    .map { com.codewithkael.simplecall.ai.LabeledVoiceprint(
+                        it.displayName, it.phoneHash, it.voiceprint!!) }
+                pipeline.selectContact(hash)
+            } catch (_: Exception) {}
             _ui.value = _ui.value.copy(
                 uploading = false,
                 addFlow = flow.copy(step = 2),

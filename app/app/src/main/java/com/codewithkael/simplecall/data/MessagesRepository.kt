@@ -2,6 +2,7 @@ package com.codewithkael.simplecall.data
 
 import android.content.Context
 import android.util.Log
+import com.codewithkael.simplecall.ai.TextEngines
 import com.codewithkael.simplecall.remote.antai.AntaiRestClient
 import com.codewithkael.simplecall.remote.antai.AntaiSession
 import com.codewithkael.simplecall.remote.antai.ChatMessage
@@ -9,6 +10,7 @@ import com.codewithkael.simplecall.remote.antai.ChatSocketClient
 import com.codewithkael.simplecall.remote.antai.Conversation
 import com.codewithkael.simplecall.remote.antai.MessageChannel
 import com.codewithkael.simplecall.remote.antai.NotificationEvent
+import com.codewithkael.simplecall.remote.antai.RiskBand
 import com.codewithkael.simplecall.remote.antai.VerdictPayload
 import com.codewithkael.simplecall.remote.antai.VerifyOutcome
 import com.codewithkael.simplecall.remote.antai.VerifyPrompt
@@ -86,20 +88,31 @@ class MessagesRepository @Inject constructor(
 
     // ---------------- lifecycle ----------------
 
-    /** Hydrate from device SMS and open the receive socket. Idempotent. */
+    /** Hydrate from device SMS (always works, sign-in or not). */
     fun start() {
         if (started) return
         started = true
         scope.launch { hydrateSms() }
+        // Socket needs a server-issued token; only try when actually signed in.
         connectSocket()
     }
 
-    /** Re-hydrate after (re)login or when SMS permission is newly granted. */
+    /** Re-hydrate after real (server) login or when SMS permission is newly granted. */
     fun refreshSms() {
         scope.launch { hydrateSms() }
     }
 
+    /** Called by the ViewModel right after a successful login. */
+    fun onLoggedIn() {
+        scope.launch { hydrateSms() }
+        connectSocket()
+    }
+
     private fun connectSocket() {
+        // A single socket: teardown any stale one first so re-login with a new
+        // token doesn't leak the old connection (or keep using a dead one).
+        socket?.close()
+        socket = null
         if (!session.isLoggedIn) return
         val host = callHost()
         val url = Constants.getAntaiChatWsUrl(host, session.token)
@@ -158,6 +171,34 @@ class MessagesRepository @Inject constructor(
         }
     }
 
+    // ---------------- degraded local fallback ----------------
+
+    /**
+     * Bug 1 — degraded local scoring. When the /notify/external round-trip fails
+     * (offline, server down, or not signed in), fall back to the SAME on-device
+     * scam heuristics the Shield uses so an inbound scam still surfaces a verdict
+     * instead of silently reading "safe". Provenance is flagged (onDevice=true)
+     * so the UI can label it honestly; a benign body carries NO verdict and a
+     * sub-threshold score, so it renders SAFE — an honest absence, never a fake
+     * alarm (same discipline as the acoustic pipeline's null-on-absent signals).
+     */
+    private data class LocalScore(
+        val risk: Double, val verdict: String?, val why: String?, val scamType: String?
+    )
+
+    private fun localScore(body: String): LocalScore {
+        val r = try { TextEngines.scamHeuristic(body) } catch (_: Exception) { null }
+        val risk = (r?.prob ?: 0f) * 100.0
+        val elevated = risk >= RiskBand.CAUTION_AT
+        val typeSuffix = r?.type?.let { " — looks like $it" } ?: ""
+        return LocalScore(
+            risk = risk,
+            verdict = if (elevated) "On-device scam check" else null,
+            why = if (elevated) "Scored on this device because the server was unreachable$typeSuffix" else null,
+            scamType = r?.type,
+        )
+    }
+
     // ---------------- inbound: device SMS ----------------
 
     /** Called by SmsReceiver for a newly received SMS. Stores it, then scores it. */
@@ -185,8 +226,18 @@ class MessagesRepository @Inject constructor(
                     }
                 }
                 .onFailure {
-                    Log.w(TAG, "notify/external (sms) failed", it)
-                    replaceMessage(key, id) { m -> m.copy(analysisPending = false) }
+                    Log.w(TAG, "notify/external (sms) failed — scoring on-device", it)
+                    val ls = localScore(body)
+                    replaceMessage(key, id) { m ->
+                        m.copy(
+                            riskScore = ls.risk,
+                            verdict = ls.verdict,
+                            why = ls.why,
+                            scamType = ls.scamType,
+                            analysisPending = false,
+                            onDevice = true,
+                        )
+                    }
                 }
         }
     }
@@ -218,8 +269,18 @@ class MessagesRepository @Inject constructor(
                     }
                 }
                 .onFailure {
-                    Log.w(TAG, "notify/external ($source) failed", it)
-                    replaceNotif(id) { it.copy(analysisPending = false) }
+                    Log.w(TAG, "notify/external ($source) failed — scoring on-device", it)
+                    val ls = localScore(text)
+                    replaceNotif(id) { ev ->
+                        ev.copy(
+                            riskScore = ls.risk,
+                            verdict = ls.verdict,
+                            why = ls.why,
+                            scamType = ls.scamType,
+                            analysisPending = false,
+                            onDevice = true,
+                        )
+                    }
                 }
         }
     }

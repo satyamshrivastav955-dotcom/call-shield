@@ -42,6 +42,8 @@
     <string name="btn_view_details">View details</string>
     <string name="btn_show_less">Show less</string>
     <string name="btn_draft_fir">Draft FIR / Complaint</string>
+    <string name="btn_file_complaint">File complaint (1930)</string>
+    <string name="btn_close">Close</string>
     <string name="btn_share_result">Share result</string>
     <string name="label_call_analysis">Call analysis</string>
     <string name="label_recommended_action">Recommended: %1$s</string>
@@ -56,9 +58,10 @@
     <string name="mode_connected">Connected</string>
     <string name="mode_local_only">Local-only</string>
 
-    <!-- Recording check flow -->
-    <string name="card_check_recording_title">Check a recording</string>
-    <string name="card_check_recording_desc">Scan forwarded audio or voice notes for deepfakes and scam scripts</string>
+    <!-- Recording check flow (SERVER path: uploads the clip to the antAI backend.
+         Distinct from the on-device Shield's offline "Check a recording" button.) -->
+    <string name="card_check_recording_title">Check a forwarded clip (server)</string>
+    <string name="card_check_recording_desc">Upload a forwarded voice note or clip for a full deepfake &amp; scam scan on the antAI server (needs connection)</string>
     <string name="btn_pick_audio">Select audio file</string>
     <string name="recording_analyzing">Analyzing audio stream…</string>
     <string name="recording_success">Analysis complete</string>

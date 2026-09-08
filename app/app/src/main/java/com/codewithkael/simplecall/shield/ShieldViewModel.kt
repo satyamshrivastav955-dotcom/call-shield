@@ -11,8 +11,10 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.codewithkael.simplecall.ai.ModelManager
+import com.codewithkael.simplecall.ai.NoOpTranscriber
 import com.codewithkael.simplecall.ai.ShieldPipeline
 import com.codewithkael.simplecall.ai.SpeakerEngine
+import com.codewithkael.simplecall.ai.Transcriber
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -39,15 +41,73 @@ class ShieldViewModel @Inject constructor(
     private val pipeline: ShieldPipeline,
     private val store: TrustedStore,
     private val voiceprintRecorder: com.codewithkael.simplecall.voice.VoiceprintRecorder,
+    private val transcriber: Transcriber,
+    private val overlay: ShieldOverlay,
 ) : ViewModel() {
 
-    private val _armed = MutableStateFlow(false)
+    /**
+     * In-app preview alert (Bug 4 fix): a Compose card state rendered INSIDE the
+     * Shield screen, not the real system overlay window — the old test button
+     * added a TYPE_APPLICATION_OVERLAY window on top of the app's own UI, which
+     * is broken layering in-app (the system window is only correct over OTHER
+     * apps, which the live mic path already exercises).
+     */
+    private val _previewAlert = MutableStateFlow<Pair<Int, String>?>(null)
+    val previewAlert: StateFlow<Pair<Int, String>?> = _previewAlert.asStateFlow()
+
+    fun testOverlay() {
+        _previewAlert.value = 92 to
+            "🛡️ antAI Live Alert: AI-generated voice clone detected (Score: 92%). Potential scam or impersonation."
+    }
+
+    fun dismissPreviewAlert() {
+        _previewAlert.value = null
+    }
+
+    fun dismissOverlay() {
+        overlay.hide()
+    }
+
+    private val _armed = MutableStateFlow(ShieldArmedState.armed.value)
     val armed: StateFlow<Boolean> = _armed.asStateFlow()
+
+    init {
+        // Mirror the service's armed state into this VM so the toggle reflects
+        // the real service lifecycle (e.g. mic permission revoked -> service
+        // stops -> toggle flips off, instead of lying "Active").
+        viewModelScope.launch {
+            ShieldArmedState.armed.collect { _armed.value = it }
+        }
+    }
 
     val liveResult = pipeline.results
 
     private val _modelStatus = MutableStateFlow("checking…")
     val modelStatus: StateFlow<String> = _modelStatus.asStateFlow()
+
+    /**
+     * REAL-TIME engine status (Bug 2 fix): named per capability, derived from
+     * actual file presence + a live NoOp probe for ASR, refreshed on every call
+     * (screen entry, model import, etc.). The old one-shot init check said
+     * "heuristic mode (N models pending)" forever because REQUIRED listed
+     * models that never ship; this names what's actually loaded vs pending.
+     */
+    fun refreshModelStatus() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val st = models.modelStatus()
+            val asrActive = transcriber !== NoOpTranscriber
+            val parts = buildList {
+                // #10: plain-language capability names (was clone-detect/voice-ID/ASR
+                // jargon). The ✓/✗ stay honest — they reflect real file presence and
+                // a live ASR probe, never a fabricated "loaded".
+                add(if (st["spoof_ast"] == true) "Clone detector ✓" else "Clone detector ✗")
+                add(if (st["ecapa_tdnn"] == true) "Voice match ✓" else "Voice match ✗")
+                add(if (asrActive) "Transcription ✓" else "Transcription ✗")
+                add("Scam-text scan: on-device")
+            }
+            _modelStatus.value = parts.joinToString(" · ")
+        }
+    }
 
     private val _busy = MutableStateFlow(false)
     val busy: StateFlow<Boolean> = _busy.asStateFlow()
@@ -56,11 +116,14 @@ class ShieldViewModel @Inject constructor(
     val contacts: StateFlow<List<TrustedContact>> = _contacts.asStateFlow()
 
     init {
+        // TASK 2 — the file-scan path shares the same @Singleton pipeline as the
+        // mic service; assign the on-device transcriber so analyzeFile() transcribes
+        // locally too (NoOp if ASR isn't installed — no fabricated transcript).
+        pipeline.transcriber = transcriber
         viewModelScope.launch(Dispatchers.IO) {
-            val missing = models.missingModels()
-            _modelStatus.value = if (missing.isEmpty()) "all ${ModelManager.REQUIRED.size} on-device ✓"
-            else "heuristic mode (${missing.size} models pending)"
             _contacts.value = store.loadContacts()
+            refreshVoiceprints()
+            refreshModelStatus()
         }
     }
 
@@ -108,10 +171,9 @@ class ShieldViewModel @Inject constructor(
             try {
                 val pcm = AudioFileDecoder.decodeToMono16k(ctx, uri)
                 pipeline.reset()
-                // enroll first trusted voiceprint (if any) for match %
-                store.loadContacts().firstOrNull { it.voiceprint != null }?.voiceprint?.let {
-                    pipeline.enrolledVoiceprint = it
-                }
+                // Per-contact verification (#4): all labeled prints, not
+                // first-saved-wins.
+                refreshVoiceprints()
                 var last: com.codewithkael.simplecall.ai.ShieldPipeline.LiveResult? = null
                 var off = 0
                 while (off < pcm.size) {
@@ -120,7 +182,21 @@ class ShieldViewModel @Inject constructor(
                     off += n
                 }
                 last = last ?: pipeline.evaluate(pcm.takeLast(minOf(pcm.size, 64000)).toFloatArray())
-                last?.let { store.appendVerdict(it.risk, it.band, it.explanation) }
+                last?.let {
+                    store.appendVerdict(
+                        risk = it.risk,
+                        band = it.band,
+                        explanation = it.explanation,
+                        hard = it.hard,
+                        soft = it.soft,
+                        transcript = it.transcript,
+                        source = "file-scan",
+                        // Phase 3.1 forensic telemetry, same contract as the live path.
+                        spoofProb = it.spoofProb,
+                        contact = if (it.speakerClaimed) it.speakerName else null,
+                        scamType = it.scamType,
+                    )
+                }
             } catch (_: Exception) {
             } finally {
                 _busy.value = false
@@ -135,8 +211,36 @@ class ShieldViewModel @Inject constructor(
         }
     }
 
+    /** Push every enrolled voiceprint (labeled) into the shared pipeline. */
+    private fun refreshVoiceprints() {
+        try {
+            pipeline.voiceprints = store.loadContacts()
+                .filter { it.voiceprint != null }
+                .map { com.codewithkael.simplecall.ai.LabeledVoiceprint(
+                    it.displayName, it.phoneHash, it.voiceprint!!) }
+        } catch (_: Exception) {}
+    }
+
+    /**
+     * Per-contact selection (#4): target verification at one family member —
+     * "is this really Mom?" — instead of an anonymous family match. Null
+     * clears the selection: unknown-caller mode, best match across all.
+     */
+    fun selectContact(phoneHash: String?) {
+        pipeline.selectContact(phoneHash)
+    }
+
     private val _enrollStatus = MutableStateFlow<String?>(null)
     val enrollStatus: StateFlow<String?> = _enrollStatus.asStateFlow()
+
+    /**
+     * Live recorder telemetry (level/seconds/enoughAudio) for the inline enroll
+     * meter in ShieldScreen — the same flow the dedicated VoiceprintScreen renders.
+     * Exposing it kills the "frozen for 8s" feel: the meter animates while the mic
+     * gathers audio instead of showing one static status line.
+     */
+    val enrollProgress: StateFlow<com.codewithkael.simplecall.voice.VoiceprintRecorder.Progress> =
+        voiceprintRecorder.progress
 
     /**
      * On-device voiceprint enrollment (#6): record a short sample, compute the
@@ -154,11 +258,21 @@ class ShieldViewModel @Inject constructor(
             }
             val err = voiceprintRecorder.start(minSeconds = 3.0)
             if (err != null) { _enrollStatus.value = err; return@launch }
-            _enrollStatus.value = "Recording… keep talking for a few seconds."
-            // Bounded wait for the recorder to gather enough audio.
+            _enrollStatus.value = "Recording… keep talking."
+            // Live-coached bounded wait: publish seconds each tick so neither the
+            // meter nor the status text looks frozen (P1). Capture a beat past the
+            // 3s minimum for a stabler embedding, hard-capped so a silent mic still
+            // terminates. The meter animates off voiceprintRecorder.progress.
             var waited = 0
-            while (waited < 8000 && voiceprintRecorder.progress.value.let { it.recording && !it.enoughAudio }) {
-                kotlinx.coroutines.delay(200); waited += 200
+            while (waited < 9000) {
+                val p = voiceprintRecorder.progress.value
+                if (!p.recording) break
+                _enrollStatus.value = if (p.enoughAudio)
+                    "Got enough (%.1fs) — finishing…".format(p.seconds)
+                else
+                    "Recording… %.1fs — keep talking".format(p.seconds)
+                if (p.enoughAudio && p.seconds >= 4.5) break
+                kotlinx.coroutines.delay(150); waited += 150
             }
             val wav = voiceprintRecorder.stop()
             if (wav == null) { _enrollStatus.value = "No audio captured — try again."; return@launch }
@@ -171,7 +285,11 @@ class ShieldViewModel @Inject constructor(
             store.setVoiceprint(phoneHash, embedding)
             pipeline.enrolledVoiceprint = embedding
             _contacts.value = store.loadContacts()
-            _enrollStatus.value = "Voice enrolled ✓ — live match is now active."
+            // Per-contact (#4): the fresh print joins the labeled list and the
+            // enrolled contact becomes the verification target.
+            refreshVoiceprints()
+            pipeline.selectContact(phoneHash)
+            _enrollStatus.value = "Voice enrolled ✓ — verifying against this contact now."
         }
     }
 
@@ -197,11 +315,15 @@ class ShieldViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Build the full-transcript FIR draft (session record, not the scoring
+     * window) — keeps evidence that has scrolled out of the live view.
+     */
     fun buildFirDraft(): String {
         val r = pipeline.results.value
         return store.buildFirDraft(
             risk = r?.risk, band = r?.band, explanation = r?.explanation,
-            transcript = r?.transcript,
+            transcript = pipeline.fullTranscript.ifBlank { r?.transcript },
         )
     }
 

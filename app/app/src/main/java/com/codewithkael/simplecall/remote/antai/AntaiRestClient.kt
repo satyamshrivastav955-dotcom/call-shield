@@ -476,7 +476,14 @@ data class IncidentItem(
     val why: String,
     val action: String,
     val scamType: String?,
-    val createdAt: Long          // epoch millis (UTC)
+    val createdAt: Long,         // epoch millis (UTC)
+    // Phase 3.2 forensic detail for the inspection dialog. On-device rows carry
+    // these from TrustedStore; server /api/verdicts rows leave them null (the
+    // endpoint doesn't return per-window telemetry). null = not available — never
+    // fabricated, so the dialog shows an honest "unavailable" instead of a fake 0.
+    val transcript: String? = null,
+    val spoofProb: Double? = null,   // AI-voice score 0..1, or null (not scored)
+    val contact: String? = null      // claimed/matched contact name, or null (unknown)
 )
 data class NotifyResult(val ingested: Boolean, val riskScore: Double, val verdict: VerdictPayload?)
 
