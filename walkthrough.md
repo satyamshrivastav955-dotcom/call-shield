@@ -83,3 +83,19 @@ All three testing tiers verified with 100% passing results:
      - Real server page-text scan path (benign `ingested:false`, scam `ingested:true, risk_score=91.9`).
      - Continuous scanner wiring verified (`state.latestText` updated, `antai-textscan-toggle` responds `{ok}`).
      - MV3 background service worker confirmed active and error-free.
+
+---
+
+## 7. GATE 7 — Chrome Extension Production Completion (Audio Pass-Through, Active Defense & 1930 FIR)
+
+Full verification of the antAI Guardian Chrome Extension (MV3) across all functional domains:
+1. **Zero-Mute Audio Capture**: Connected `src.connect(ctx.destination)` in `offscreen.js` so tab audio routes to speakers, resolving tab muting during call protection. Added 500ms throttled Float32 RMS audio energy metering.
+2. **Meeting Platform Auto-Detection Engine**: `shared/platform.js` reliably isolates Google Meet, Zoom Meeting, Microsoft Teams, Cisco Webex, WhatsApp Web, and generic web pages. Injects platform metadata into WebSocket `start` frame and popup detection banners.
+3. **Autonomous Active Defense (Freeze / Intercept Modal)**: Enforces a 60-second conscious hold on critical risk (risk ≥ 70 or band = critical) with warning copy, countdown timer, and accessible actions (1930 FIR copy, Acknowledge, conscious Override).
+4. **Incident History & 1930 FIR Draft Generator**: `shared/incident.js` and `background.js` record up to 50 incidents in `chrome.storage.local` and format complete bilingual cybercrime complaint drafts with 1930 Helpline and `https://cybercrime.gov.in` URLs.
+5. **Comprehensive Test Suite (`npm test` in `extension/`)**:
+   - `node test/textscan_test.mjs` -> **22 passed, 0 failed**
+   - `node test/risk_test.mjs` -> **107 passed, 0 failed**
+   - `node test/platform_test.mjs` -> **41 passed, 0 failed**
+   - `node test/incident_test.mjs` -> **62 passed, 0 failed**
+   - **Total: 232 passed, 0 failed**.
