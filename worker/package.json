@@ -1,0 +1,16 @@
+{
+  "name": "antai-edge-api",
+  "version": "1.0.0",
+  "description": "antAI Edge API Worker on Cloudflare",
+  "main": "worker.js",
+  "scripts": {
+    "dev": "wrangler dev --port 8765",
+    "deploy": "wrangler deploy"
+  },
+  "keywords": ["cloudflare", "workers", "antai", "webrtc", "scam-defense"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.114.0"
+  }
+}

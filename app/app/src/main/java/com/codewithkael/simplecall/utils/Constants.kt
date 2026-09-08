@@ -14,8 +14,8 @@ object Constants {
     // Default signaling server host = Cloudflare Worker
     const val DEFAULT_SERVER_HOST = "antai-signaling-server.opaque-preface.workers.dev"
 
-    // Default antAI AI detection server host = Cloudflare Tunnel
-    const val DEFAULT_ANTAI_HOST = "blend-switching-lbs-concentration.trycloudflare.com"
+    // Default antAI AI detection server host = Cloudflare Worker
+    const val DEFAULT_ANTAI_HOST = "antai-edge-api.hardly-rumba.workers.dev"
 
     // Port the antAI Python server (FastAPI: LangGraph pipeline + local LLM)
     // listens on. It runs on the SAME laptop as the Node signaling server, so
