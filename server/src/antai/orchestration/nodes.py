@@ -108,14 +108,23 @@ async def voice_detector_node(state: AnalysisState) -> AnalysisState:
                 state["voice_agreement"] = r.get("agreement")
                 state["voice_backend"] = r.get("backend")
                 state["voice_label"] = r.get("label")
+                # explicit synthetic-voice verdict (True/False, or None when no
+                # backend could score it — kept distinct from the raw prob so the
+                # client shows an unambiguous "AI voice" flag, not a bare number).
+                state["is_ai_voice"] = r.get("is_ai_voice")
         sv = hub.get("speaker_verify")
         claim_id = state.get("claimed_identity_id")
         if sv and sv.ready() and claim_id:
             r = await _safe("speaker_verify.verify_against",
                             asyncio.to_thread(sv.verify_against, audio["audio"], claim_id, sr))
             if r is not None:
-                state["speaker_similarity"] = r.get("similarity")
-                if r.get("similarity") is not None:
+                sim = r.get("similarity")
+                state["speaker_similarity"] = sim
+                # `voice_similarity` is the spec-named alias of the ECAPA cosine so
+                # the three DUAL-ENGINE signals (is_ai_voice / voice_similarity /
+                # identity_mismatch) all surface under their documented names.
+                state["voice_similarity"] = sim
+                if sim is not None:
                     state["identity_mismatch"] = not r.get("matches")
     return state
 

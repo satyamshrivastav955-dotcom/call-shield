@@ -156,24 +156,40 @@ class VoiceDeepfakeEngine(BaseEngine):
             return False
         try:
             self._models: list[dict] = []
-            # primary (AST ASVspoof5)
-            p = self._load_one(primary_dir, device)
+            # primary (AST ASVspoof5) — the head that saturates, so it takes the
+            # configured de-saturation temperature (calibration.json still wins).
+            ast_default_t = float(getattr(cfg.pipeline, "voice_ast_temperature", 1.0))
+            p = self._load_one(primary_dir, device, default_temperature=ast_default_t)
             if p is None:
                 return False
             self._models.append({"name": "asv5", **p})
-            # cross-check SSL wav2vec2 (optional; fail-soft)
+            # cross-check SSL wav2vec2 (optional; fail-soft). No saturation
+            # pathology observed on it, so it defaults to T=1.0 (its own
+            # calibration.json still overrides if a fit was run).
             cross_dir = Path(cfg.models.root) / "voice_deepfake_cross2"
             if cross_dir.exists():
-                c = self._load_one(cross_dir, device)
+                c = self._load_one(cross_dir, device, default_temperature=1.0)
                 if c is not None:
                     self._models.append({"name": "w2v", **c})
             self.device = device
+            for m in self._models:
+                t = m.get("temperature", 1.0)
+                if m["name"] == "asv5" and abs(t - 1.0) < 1e-9:
+                    log.warning("voice deepfake: AST head T=1.0 — SOFTMAX IS "
+                                "UNCALIBRATED (still overconfident on bonafide). "
+                                "Run scripts/fit_temperature.py to de-saturate; "
+                                "the v>=0.999 saturation guard is the only net "
+                                "until then. Source: %s", m.get("temp_source"))
+                else:
+                    log.info("voice deepfake: %s softmax temperature T=%.3f (%s)",
+                             m["name"], t, m.get("temp_source"))
             return True
         except Exception as e:
             log.warning("voice deepfake load failed: %s", e)
             return False
 
-    def _load_one(self, model_dir: Path, device: str) -> dict | None:
+    def _load_one(self, model_dir: Path, device: str,
+                  default_temperature: float = 1.0) -> dict | None:
         try:
             from transformers import (AutoFeatureExtractor,
                                       AutoModelForAudioClassification)
@@ -192,8 +208,40 @@ class VoiceDeepfakeEngine(BaseEngine):
             model = model.half().to("cuda")
         else:
             model = model.eval()
+        temperature, temp_source = self._resolve_temperature(model_dir, default_temperature)
         return {"processor": processor, "model": model,
-                "spoof_index": self._find_spoof_index(model)}
+                "spoof_index": self._find_spoof_index(model),
+                "temperature": temperature, "temp_source": temp_source}
+
+    @staticmethod
+    def _resolve_temperature(model_dir: Path,
+                             default_temperature: float) -> tuple[float, str]:
+        """Softmax temperature for this checkpoint and WHERE it came from.
+
+        Precedence: a `calibration.json` fit on the host (the real, measured value)
+        wins over the config default. A fitted file is the only trustworthy source;
+        the config default exists so the mechanism is wired even before a fit is
+        run, and defaults to 1.0 (identity — no de-saturation, changes nothing). We
+        return the source string too so `_load` can log LOUDLY when the head is
+        running uncalibrated, rather than letting T=1.0 masquerade as "calibrated".
+        """
+        import json
+        cal = model_dir / "calibration.json"
+        if cal.exists():
+            try:
+                data = json.loads(cal.read_text())
+                t = float(data.get("temperature"))
+                if t > 0:
+                    return t, f"calibration.json (fit: {cal})"
+                log.warning("voice deepfake: %s has non-positive temperature %r — "
+                            "ignoring, using default", cal, t)
+            except Exception as e:
+                log.warning("voice deepfake: could not read %s (%s) — using default",
+                            cal, e)
+        src = ("config default (UNCALIBRATED — run scripts/fit_temperature.py)"
+               if abs(default_temperature - 1.0) < 1e-9
+               else "config default")
+        return float(default_temperature), src
 
     @staticmethod
     def _find_spoof_index(model) -> int:
@@ -256,7 +304,11 @@ class VoiceDeepfakeEngine(BaseEngine):
 
     def analyze(self, audio: np.ndarray, sample_rate: int = 16000,
                 context_audio: np.ndarray | None = None) -> dict:
-        """Returns {spoof_prob, label, per_model, ready, backend, sources}.
+        """Returns {spoof_prob, label, is_ai_voice, per_model, ready, backend, sources}.
+
+        `is_ai_voice` is the explicit synthetic-voice verdict (True/False), or None
+        when no backend could score the segment (unknown — never a fabricated
+        False). `spoof_prob` is the accompanying 0..1 confidence.
 
         In "both" mode the hosted API and the local ensemble are both scored and
         combined by `_combine`. In "velma" mode the local ensemble is only run
@@ -267,8 +319,8 @@ class VoiceDeepfakeEngine(BaseEngine):
         it must see seconds of real speech. Falls back to ``audio`` when absent.
         """
         if not self.ready():
-            return {"spoof_prob": None, "label": None, "per_model": {},
-                    "ready": False, "backend": "none"}
+            return {"spoof_prob": None, "label": None, "is_ai_voice": None,
+                    "per_model": {}, "ready": False, "backend": "none"}
 
         velma_p = self._velma_score(audio, sample_rate)
         local: dict | None = None
@@ -307,9 +359,9 @@ class VoiceDeepfakeEngine(BaseEngine):
         if not scores:
             log.error("voice_deepfake: no backend produced a score for this "
                       "segment — AI-voice detection is PRODUCING NOTHING")
-            return {"spoof_prob": None, "label": None, "per_model": per,
-                    "ready": True, "backend": self.backend, "sources": 0,
-                    "agreement": None}
+            return {"spoof_prob": None, "label": None, "is_ai_voice": None,
+                    "per_model": per, "ready": True, "backend": self.backend,
+                    "sources": 0, "agreement": None}
 
         prob = max(scores)
         agreement = "single-source"
@@ -338,8 +390,13 @@ class VoiceDeepfakeEngine(BaseEngine):
         if agreement == "disagree":
             # the two models contradict each other: do not call it a clone
             label = "uncertain"
-        return {"spoof_prob": prob, "label": label, "per_model": per,
-                "ready": True, "backend": self.backend,
+        # Explicit, distinct AI-voice verdict for the client/debug layer: a bool
+        # that ONLY asserts synthetic when the merged verdict is actually "spoof".
+        # "uncertain"/"bonafide" -> False (not asserting a clone); a None score
+        # already returned above as is_ai_voice=None (unknown, never a fake False).
+        is_ai_voice = (label == "spoof")
+        return {"spoof_prob": prob, "label": label, "is_ai_voice": is_ai_voice,
+                "per_model": per, "ready": True, "backend": self.backend,
                 "sources": len(scores), "agreement": agreement}
 
     def _analyze_local(self, audio: np.ndarray, sample_rate: int,
@@ -365,7 +422,14 @@ class VoiceDeepfakeEngine(BaseEngine):
                               .to("cuda") for k, v in inputs.items()}
                 with torch.no_grad():
                     logits = m["model"](**inputs).logits
-                probs = torch.softmax(logits.float(), dim=-1)
+                # Temperature scaling (de-saturation): T>1 spreads an overconfident
+                # head's mass back toward the middle so real speech stops reading as
+                # a near-certain clone. T=1.0 is the identity (no change). Fit on the
+                # host; see `voice_ast_temperature` / calibration.json.
+                t = float(m.get("temperature", 1.0))
+                if not t > 0:
+                    t = 1.0
+                probs = torch.softmax(logits.float() / t, dim=-1)
                 idx = m["spoof_index"]
                 per[m["name"]] = float(probs[0][idx].cpu().numpy()) \
                     if probs.shape[1] > idx else float(probs[0][-1])

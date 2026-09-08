@@ -237,6 +237,20 @@ class PipelineConfig:
     # the other backend disagreed — the exact miss this feature exists to prevent.
     # Keep it high (0.95): the cap still suppresses every merely-confident flag.
     voice_solo_alert_threshold: float = 0.95
+    # Softmax TEMPERATURE for the local AST spoof head (de-saturation, Phase 1.1).
+    # The AST checkpoint is overconfident: on real speech it saturates to ~1.000
+    # (ASVspoof5 dev: ~93% of bonafide flagged at thr 0.5, eer_threshold≈1.0), so a
+    # genuine caller reads as a clone. Temperature scaling (Guo et al. 2017) divides
+    # the logits by T>1 BEFORE softmax to spread that mass back out. T is a
+    # per-checkpoint quantity that MUST be fit on a labelled dev set — it is NOT a
+    # number to guess. So this default is 1.0 (an identity no-op that changes
+    # nothing) and the real value is produced on the host by
+    # `server/scripts/fit_temperature.py`, which writes `calibration.json` into the
+    # model dir; that file, when present, OVERRIDES this default. Until a fit is
+    # run, the existing saturation guard (drop v>=0.999 + `_aggregate`) remains the
+    # active safety net. Do NOT hand-set this to a fabricated ">1" and call it
+    # calibrated — that violates the project HARD RULE.
+    voice_ast_temperature: float = 1.0
     # How much recent speech the synthetic-voice detectors get to look at.
     # VAD segments are 0.4-2.0s (tuned for responsive ASR), but the SSL models
     # behind AI-voice detection were trained on ASVspoof-style utterances of a

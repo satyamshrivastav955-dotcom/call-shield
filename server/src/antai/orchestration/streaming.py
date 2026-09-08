@@ -94,6 +94,9 @@ def normalized_result(runner: SessionRunner) -> dict:
         "acoustic": {
             # synthesis-artifact / AI-voice probability (0..1) or null
             "voice_deepfake": voice,
+            # explicit synthetic-voice verdict: true/false, or null when no backend
+            # could score the segment (unknown — never a fabricated false).
+            "is_ai_voice": sig.get("is_ai_voice"),
             "label": sig.get("voice_label"),
             "per_model": sig.get("voice_per_model") or {},
             "sources": sig.get("voice_sources"),

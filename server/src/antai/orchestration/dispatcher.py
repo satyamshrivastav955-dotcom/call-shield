@@ -156,6 +156,7 @@ def _signals(state: AnalysisState) -> dict:
     return {
         "identity_mismatch": state.get("identity_mismatch"),
         "speaker_similarity": state.get("speaker_similarity"),
+        "voice_similarity": state.get("voice_similarity"),
         "voice_deepfake": state.get("voice_deepfake"),
         "voice_per_model": state.get("voice_per_model") or {},
         # dual-backend provenance: how many detectors scored this segment, whether
@@ -165,6 +166,7 @@ def _signals(state: AnalysisState) -> dict:
         "voice_agreement": state.get("voice_agreement"),
         "voice_backend": state.get("voice_backend"),
         "voice_label": state.get("voice_label"),
+        "is_ai_voice": state.get("is_ai_voice"),
         "video_deepfake": state.get("video_deepfake"),
         "video_votes": state.get("video_votes"),        # # of ensemble models that flagged (int)
         "video_agreement": state.get("video_agreement"),  # fraction in agreement (0..1)
@@ -671,6 +673,24 @@ class SessionRunner:
         self.risk_peak = max(self.risk_peak, new_risk)
         self.band = new_band
         decision = out.get("decision", "log")
+
+        # Per-chunk certification log (Task 8): ONE unconditional line per graph
+        # evaluation, so a two-device live call produces a readable, grep-able
+        # stream of REAL per-chunk model scores — not just the throttled
+        # signals.update / band-gated verdict.update pushes the client receives.
+        # Every value here is live model output; a signal no engine produced
+        # prints "n/a" (never a fabricated 0). Grep it with: `-s tap-eval` is
+        # server-side (logger "antai...dispatcher"); filter logs on "tap-eval".
+        def _s(v: object) -> str:
+            return f"{v:.2f}" if isinstance(v, (int, float)) and not isinstance(v, bool) else "n/a"
+        log.info(
+            "tap-eval session=%s audio_seg=%d risk=%.1f band=%s decision=%s "
+            "voice_df=%s video_df=%s scam=%s urgency=%s transcript_len=%d asr_fail=%d",
+            self.session_key, self._audio_segments, new_risk, new_band, decision,
+            _s(self.signals.get("voice_deepfake")), _s(self.signals.get("video_deepfake")),
+            _s(self.signals.get("scam_prob")), _s(self.signals.get("urgency")),
+            len(self.transcript or ""), self._asr_failures,
+        )
 
         rt = get_rt_hub()
 

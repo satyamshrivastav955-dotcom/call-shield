@@ -37,7 +37,9 @@ class AnalysisState(TypedDict, total=False):
     voice_agreement: Optional[str]    # both-flag | disagree | one-flag-one-unsure | ...
     voice_backend: Optional[str]      # both | velma | local
     voice_label: Optional[str]        # spoof | bonafide | uncertain
+    is_ai_voice: Optional[bool]       # explicit synthetic-voice verdict (None=unknown)
     speaker_similarity: Optional[float]
+    voice_similarity: Optional[float] # spec-named alias of speaker_similarity (ECAPA cosine)
     identity_mismatch: bool
     video_deepfake: Optional[float]
     video_votes: Optional[dict]       # {community_vit: prob, temporal: prob, ...} per-model

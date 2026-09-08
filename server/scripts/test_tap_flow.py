@@ -121,8 +121,10 @@ async def tap_phone(username: str, peer: str, stream_audio: bool, stream_video: 
 
 async def main():
     print("connecting two tap phones...")
-    a_events = await asyncio.create_task(tap_phone("phoneAAA", "phoneBBB", False, True))
-    b_events = await asyncio.create_task(tap_phone("phoneBBB", "phoneAAA", True, False))
+    a_events, b_events = await asyncio.gather(
+        tap_phone("phoneAAA", "phoneBBB", False, True),
+        tap_phone("phoneBBB", "phoneAAA", True, False),
+    )
 
     print(f"\n[phoneAAA] received {len(a_events)} pushes:")
     for e in a_events:
