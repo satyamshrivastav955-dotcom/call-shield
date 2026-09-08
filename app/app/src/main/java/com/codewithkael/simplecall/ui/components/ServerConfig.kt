@@ -81,8 +81,8 @@ fun ServerConfig(
                 value = host.value,
                 onValueChange = { host.value = it },
                 label = { Text("Server address") },
-                placeholder = { Text("192.168.1.10") },
-                supportingText = { Text("Found in the server console on port 3007") },
+                placeholder = { Text("antai-signaling-server.opaque-preface.workers.dev") },
+                supportingText = { Text("Cloudflare Edge or local server host") },
                 singleLine = true,
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth()

@@ -11,7 +11,11 @@ object Constants {
     // e.g. 192.168.1.23). You can also change this at runtime on the app's home
     // screen (it is saved on the device), so you never need to rebuild just because
     // the laptop's IP changed. This default is only the pre-filled value.
-    const val DEFAULT_SERVER_HOST = "10.139.168.151"
+    // Default signaling server host = Cloudflare Worker
+    const val DEFAULT_SERVER_HOST = "antai-signaling-server.opaque-preface.workers.dev"
+
+    // Default antAI AI detection server host = Cloudflare Tunnel
+    const val DEFAULT_ANTAI_HOST = "blend-switching-lbs-concentration.trycloudflare.com"
 
     // Port the antAI Python server (FastAPI: LangGraph pipeline + local LLM)
     // listens on. It runs on the SAME laptop as the Node signaling server, so
@@ -41,8 +45,9 @@ object Constants {
     fun getWebSocketUrl(host: String, username: String): String {
         val h = cleanHost(host)
         return if (isCloudflareOrSecureDomain(host)) {
-            // Cloudflare Worker / Tunnel runs over secure WSS without custom port
-            "wss://$h/?username=$username"
+            // If the host entered is the AI tunnel, route signaling to the Cloudflare Worker
+            val targetHost = if (h.contains("trycloudflare.com", ignoreCase = true)) DEFAULT_SERVER_HOST else h
+            "wss://$targetHost/?username=$username"
         } else {
             "ws://$h:$SIGNALING_PORT/?username=$username"
         }
@@ -54,7 +59,9 @@ object Constants {
     fun getAntaiTapUrl(host: String, username: String): String {
         val h = cleanHost(host)
         return if (isCloudflareOrSecureDomain(host)) {
-            "wss://$h/ws/tap?user=$username"
+            // If the host entered is the signaling worker, route AI tap to the Cloudflare Tunnel
+            val targetHost = if (h.contains("workers.dev", ignoreCase = true)) DEFAULT_ANTAI_HOST else h
+            "wss://$targetHost/ws/tap?user=$username"
         } else {
             "ws://$h:$ANTAI_PORT/ws/tap?user=$username"
         }
@@ -65,7 +72,8 @@ object Constants {
     fun getAntaiRestBase(host: String): String {
         val h = cleanHost(host)
         return if (isCloudflareOrSecureDomain(host)) {
-            "https://$h"
+            val targetHost = if (h.contains("workers.dev", ignoreCase = true)) DEFAULT_ANTAI_HOST else h
+            "https://$targetHost"
         } else {
             "http://$h:$ANTAI_PORT"
         }
@@ -76,7 +84,8 @@ object Constants {
     fun getAntaiChatWsUrl(host: String, token: String): String {
         val h = cleanHost(host)
         return if (isCloudflareOrSecureDomain(host)) {
-            "wss://$h/ws/chat?token=$token"
+            val targetHost = if (h.contains("workers.dev", ignoreCase = true)) DEFAULT_ANTAI_HOST else h
+            "wss://$targetHost/ws/chat?token=$token"
         } else {
             "ws://$h:$ANTAI_PORT/ws/chat?token=$token"
         }

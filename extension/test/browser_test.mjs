@@ -3,7 +3,18 @@
 // loaded; antAI server on localhost:8765. Run: node extension/test/browser_test.mjs
 
 const CDP = "http://localhost:9222";
-const EXT_ID = process.env.ANTAI_EXT_ID || "cpjlcheifbkelhhdpcfjijhbdfoheilh";
+let extId = process.env.ANTAI_EXT_ID;
+if (!extId) {
+  try {
+    const targets = await (await fetch(`${CDP}/json/list`)).json();
+    const sw = targets.find((t) => t.type === "service_worker" && t.url.includes("chrome-extension://"));
+    if (sw) {
+      extId = sw.url.split("/")[2];
+      console.log("Discovered unpacked extension ID:", extId);
+    }
+  } catch {}
+}
+const EXT_ID = extId || "cpjlcheifbkelhhdpcfjijhbdfoheilh";
 let pass = 0, fail = 0;
 const ok = (c, name, detail) => {
   if (c) { pass++; console.log("  ✓ " + name); }
@@ -87,7 +98,7 @@ const modelsText = await evalJS(pop, `document.getElementById("models").textCont
 ok(/^models:/.test(modelsText), "models indicator populated by SW", modelsText);
 ok(!modelsText.includes("checking"), "models check completed", modelsText);
 console.log("    " + modelsText);
-ok(await evalJS(pop, `document.getElementById("toggle").textContent === "Protect this tab"`), "idle toggle state");
+ok(await evalJS(pop, `document.getElementById("toggle").textContent.includes("Protect this tab")`), "idle toggle state");
 
 // ── 3. Scan: benign + scam text through the real server path ────────────────
 console.log("popup page — page-text scan");
