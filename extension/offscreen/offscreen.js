@@ -13,6 +13,21 @@ let cfg = null;
 let stopped = true;
 let pendingFrames = [];
 let backoffMs = 1000;
+let lastMeterTime = 0;
+
+function computeRms(buffer) {
+  if (!buffer || buffer.byteLength === 0) return 0;
+  const samples = new Float32Array(buffer);
+  const len = samples.length;
+  if (len === 0) return 0;
+  let sum = 0;
+  for (let i = 0; i < len; i++) {
+    const s = samples[i];
+    sum += s * s;
+  }
+  const val = Math.sqrt(sum / len);
+  return Number.isFinite(val) ? val : 0;
+}
 
 // Host may carry a scheme (wss:// for a TLS-proxied deployment); default ws://.
 // A stored auth token (Options → Account) rides along as ?token= — validated
@@ -51,6 +66,7 @@ function connect() {
         format: "f32le",
         speaker_id: 1,
         scenario: cfg.scenario,
+        ...(cfg && cfg.platform ? { platform: cfg.platform } : {}),
       })
     );
     for (const f of pendingFrames) ws.send(f);
@@ -89,8 +105,10 @@ function connect() {
 
 async function startCapture(msg) {
   cfg = msg.cfg;
+  if (msg.platform) cfg.platform = msg.platform;
   stopped = false;
   pendingFrames = [];
+  lastMeterTime = 0;
 
   stream = await navigator.mediaDevices.getUserMedia({
     audio: {
@@ -106,15 +124,29 @@ async function startCapture(msg) {
   await ctx.audioWorklet.addModule(chrome.runtime.getURL("worklet/pcm.js"));
   const src = ctx.createMediaStreamSource(stream);
   node = new AudioWorkletNode(ctx, "antai-pcm");
-  node.port.onmessage = (e) => sendFrame(e.data);
+  node.port.onmessage = (e) => {
+    sendFrame(e.data);
+    const now = Date.now();
+    if (now - lastMeterTime >= 500) {
+      lastMeterTime = now;
+      const rms = computeRms(e.data);
+      chrome.runtime.sendMessage({ type: "antai-audio-meter", level: rms }).catch(() => {});
+    }
+  };
   src.connect(node);
-  // Worklet has no output — do NOT connect to ctx.destination (tab keeps playing).
+  // Route tab audio to speakers so tab audio is NOT muted in the user's speakers during capture.
+  // In Chrome MV3 tabCapture mutes the tab by default unless routed to ctx.destination.
+  if (cfg.passThroughAudio !== false) {
+    src.connect(ctx.destination);
+  }
 
   connect();
 }
 
 async function stopCapture() {
   stopped = true;
+  lastMeterTime = 0;
+  chrome.runtime.sendMessage({ type: "antai-audio-meter", level: 0 }).catch(() => {});
   try {
     if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "stop" }));
   } catch {}

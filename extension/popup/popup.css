@@ -1,12 +1,13 @@
 /* antAI popup — same palette as the HUD and the Android app. */
 
 body {
-  width: 300px;
+  width: 320px;
   margin: 0;
   padding: 12px;
   background: #1a1d23;
   color: #f3f4f6;
   font-family: "Segoe UI", Roboto, system-ui, sans-serif;
+  box-sizing: border-box;
 }
 
 header {
@@ -30,11 +31,105 @@ header {
 .models.warn { color: #ca8a04; }
 .models.na { color: #6b7280; }
 
+/* Meeting Detection Banner */
+.meeting-banner {
+  background: linear-gradient(135deg, #182834, #1f3747);
+  border: 1px solid #0e7c7b;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 4px 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.meeting-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.meeting-icon {
+  font-size: 14px;
+}
+
+.meeting-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #38bdf8;
+}
+
+.meeting-btn {
+  background: #0e7c7b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+.meeting-btn:hover {
+  background: #0f8a89;
+}
+
 .status-line {
   font-size: 11px;
   color: #9ca3af;
   text-align: center;
   margin-bottom: 4px;
+}
+
+/* Audio Level Visualizer */
+.audio-visualizer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #14281c;
+  border: 1px solid #166534;
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-bottom: 6px;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+  animation: pulse 1.4s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.audio-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #86efac;
+  white-space: nowrap;
+}
+
+.meter-bar-track {
+  flex: 1;
+  height: 5px;
+  background: #1f3d2b;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.meter-bar-fill {
+  width: 15%;
+  height: 100%;
+  background: #22c55e;
+  border-radius: 3px;
+  transition: width 150ms ease-out;
 }
 
 .gauge {
@@ -128,7 +223,7 @@ button.danger {
   margin-top: 10px;
   border: none;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: background 150ms, transform 150ms;
@@ -160,13 +255,13 @@ button:active { transform: scale(0.98); }
 
 button.secondary {
   width: 100%;
-  min-height: 40px;
+  min-height: 38px;
   margin-top: 0;
   background: #242830;
   color: #f3f4f6;
   border: 1px solid #374151;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: background 150ms, transform 150ms;
@@ -189,6 +284,122 @@ button.secondary:disabled { opacity: 0.5; cursor: default; }
 
 .scan-result.ok { color: #16a34a; }
 .scan-result.warn { color: #f87171; }
+
+/* Incident History Collapsible Section */
+.incidents-panel {
+  margin-top: 10px;
+  background: #20242c;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.incidents-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #d1d5db;
+  cursor: pointer;
+  user-select: none;
+}
+
+.incidents-badge {
+  background: #374151;
+  color: #9ca3af;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.popup-incidents-list {
+  margin-top: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.popup-empty-hint {
+  font-size: 10px;
+  color: #6b7280;
+  text-align: center;
+  padding: 6px 0;
+  margin: 0;
+}
+
+.popup-incident-item {
+  background: #181b22;
+  border-left: 3px solid #ca8a04;
+  border-radius: 5px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+}
+
+.popup-incident-item.critical {
+  border-left-color: #dc2626;
+}
+
+.popup-incident-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #f3f4f6;
+}
+
+.popup-incident-time {
+  font-size: 9px;
+  color: #9ca3af;
+}
+
+.popup-incident-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  margin: 3px 0;
+}
+
+.popup-incident-scam {
+  color: #9ca3af;
+  font-size: 9px;
+}
+
+.popup-fir-btn {
+  width: 100%;
+  background: #0e7c7b;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+.popup-fir-btn:hover {
+  background: #0f8a89;
+}
+
+.portal-footer {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #2e333d;
+  text-align: center;
+}
+
+.portal-link {
+  font-size: 10px;
+  color: #38bdf8;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.portal-link:hover {
+  text-decoration: underline;
+}
 
 footer {
   margin-top: 10px;

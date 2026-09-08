@@ -4,7 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "run": "nodemon server.js"
+    "start": "node server.js",
+    "dev:node": "nodemon server.js",
+    "worker:dev": "wrangler dev --port 8787",
+    "worker:deploy": "wrangler deploy",
+    "test:node": "node signal_test.js --port 3007",
+    "test:worker": "node signal_test.js --port 8787"
   },
   "keywords": [],
   "author": "",
@@ -13,5 +18,8 @@
     "firebase-admin": "^13.6.0",
     "nodemon": "^3.1.9",
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.114.0"
   }
 }

@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "antAI Guardian — Call Protection",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Live deepfake and scam risk analysis for Meet, Zoom and Teams calls, powered by your antAI server.",
   "permissions": ["tabCapture", "offscreen", "storage", "notifications", "scripting", "tabs", "activeTab"],
+  "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js" },
   "action": {
     "default_popup": "popup/popup.html",

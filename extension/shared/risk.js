@@ -82,3 +82,47 @@ function antaiSignals(nr) {
     },
   ];
 }
+
+// Active defense freeze threshold check
+// returns true if band === "critical" or (risk !== null && !isNaN(risk) && Number(risk) >= criticalAt)
+function antaiIsFreeze(risk, band, verifyAt = 50, criticalAt = 70) {
+  if (band === "critical") return true;
+  if (risk !== null && risk !== undefined && !isNaN(risk)) {
+    const n = Number(risk);
+    return !isNaN(n) && n >= criticalAt;
+  }
+  return false;
+}
+
+// Format audio level to percentage ("0%" - "100%", null-safe -> "—")
+function antaiAudioLevelPct(level) {
+  if (level === null || level === undefined) return "—";
+  const f = Number(level);
+  if (isNaN(f)) return "—";
+  const val = f > 0 && f <= 1 ? f * 100 : f;
+  const clamped = Math.max(0, Math.min(100, Math.round(val)));
+  return clamped + "%";
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    ANTAI_COLORS,
+    antaiBandColor,
+    antaiBandInfo,
+    antaiFmtPct,
+    antaiFmtRisk,
+    antaiSignals,
+    antaiIsFreeze,
+    antaiAudioLevelPct,
+  };
+}
+if (typeof globalThis !== "undefined") {
+  globalThis.ANTAI_COLORS = ANTAI_COLORS;
+  globalThis.antaiBandColor = antaiBandColor;
+  globalThis.antaiBandInfo = antaiBandInfo;
+  globalThis.antaiFmtPct = antaiFmtPct;
+  globalThis.antaiFmtRisk = antaiFmtRisk;
+  globalThis.antaiSignals = antaiSignals;
+  globalThis.antaiIsFreeze = antaiIsFreeze;
+  globalThis.antaiAudioLevelPct = antaiAudioLevelPct;
+}

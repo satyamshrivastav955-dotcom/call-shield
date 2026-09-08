@@ -8,6 +8,7 @@ const DEFAULTS = {
   verifyAt: 50,
   criticalAt: 70,
   cooldownSec: 15,
+  passThroughAudio: true,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -37,6 +38,74 @@ async function refreshAccount() {
   }
 }
 
+async function loadAndRenderIncidents() {
+  const resp = await new Promise((resolve) =>
+    chrome.runtime.sendMessage({ type: "antai-get-incidents" }, resolve)
+  ).catch(() => null);
+
+  let incidents = (resp && resp.incidents) || [];
+  if (!Array.isArray(incidents)) {
+    const stored = await chrome.storage.local.get({ incidents: [] });
+    incidents = stored.incidents || [];
+  }
+
+  const container = $("incidents-container");
+  const countEl = $("incidents-count");
+  countEl.textContent = `${incidents.length} recorded`;
+
+  if (!incidents.length) {
+    container.innerHTML = `<p class="hint empty-hint">No incidents recorded yet / अभी तक कोई घटना दर्ज नहीं हुई है।</p>`;
+    return;
+  }
+
+  container.innerHTML = "";
+  for (const inc of incidents) {
+    const card = document.createElement("div");
+    const band = String(inc.band || "verify").toLowerCase();
+    card.className = `incident-card ${band === "critical" ? "critical" : "verify"}`;
+
+    const timeStr = typeof AntaiIncident !== "undefined" ? AntaiIncident.formatIST(inc.timestamp) : new Date(inc.timestamp).toLocaleString();
+    const typeIcon = inc.type === "text" ? "💬" : "📹";
+
+    const header = document.createElement("div");
+    header.className = "incident-header";
+    header.innerHTML = `
+      <span class="incident-platform">${typeIcon} ${inc.platform || "Web Page"}</span>
+      <span class="incident-time">${timeStr}</span>
+    `;
+
+    const body = document.createElement("div");
+    body.className = "incident-body";
+
+    const infoDiv = document.createElement("div");
+    const scoreColor = band === "critical" ? "#dc2626" : "#ca8a04";
+    infoDiv.innerHTML = `
+      <div class="incident-score" style="color:${scoreColor}">Risk: ${inc.risk || 0}/100 · ${band.toUpperCase()}</div>
+      <div class="incident-scam">${inc.scamType || "Suspicious Activity"}</div>
+    `;
+
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "btn-copy-fir";
+    copyBtn.textContent = "Copy 1930 FIR Draft";
+    copyBtn.addEventListener("click", async () => {
+      if (typeof AntaiIncident !== "undefined") {
+        await AntaiIncident.copyFirToClipboard(inc);
+      } else {
+        await navigator.clipboard.writeText(JSON.stringify(inc, null, 2));
+      }
+      copyBtn.textContent = "Copied! / कॉपी हुआ ✓";
+      setTimeout(() => {
+        copyBtn.textContent = "Copy 1930 FIR Draft";
+      }, 1500);
+    });
+
+    body.append(infoDiv, copyBtn);
+    card.append(header, body);
+    container.appendChild(card);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   const cfg = { ...DEFAULTS, ...(await chrome.storage.sync.get(DEFAULTS)) };
   $("serverHost").value = cfg.serverHost;
@@ -44,7 +113,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("verifyAt").value = cfg.verifyAt;
   $("criticalAt").value = cfg.criticalAt;
   $("cooldownSec").value = cfg.cooldownSec;
+  $("passThroughAudio").checked = cfg.passThroughAudio !== false;
   refreshAccount();
+  loadAndRenderIncidents();
 
   // ── Account: OTP login (same endpoints as the Android app) ──────────────
   let otpSentFor = null;
@@ -104,17 +175,44 @@ document.addEventListener("DOMContentLoaded", async () => {
     refreshAccount();
   });
 
+  // ── Incidents Management ──────────────────────────────────────────────────
+  $("export-incidents").addEventListener("click", async () => {
+    const { incidents } = await chrome.storage.local.get({ incidents: [] });
+    const jsonStr = JSON.stringify(incidents || [], null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `antai_incidents_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  $("clear-incidents").addEventListener("click", async () => {
+    if (confirm("Are you sure you want to clear all incident logs? / क्या आप सारा इतिहास हटाना चाहते हैं?")) {
+      await new Promise((resolve) =>
+        chrome.runtime.sendMessage({ type: "antai-clear-incidents" }, resolve)
+      );
+      await loadAndRenderIncidents();
+    }
+  });
+
   // ── Settings ─────────────────────────────────────────────────────────────
   $("save").addEventListener("click", async () => {
     const host = $("serverHost").value.trim().replace(/^wss?:\/\//, "").replace(/\/+$/, "");
     const verifyAt = Math.max(1, Math.min(99, Number($("verifyAt").value) || 50));
     const criticalAt = Math.max(verifyAt + 1, Math.min(100, Number($("criticalAt").value) || 70));
+    const passThroughAudio = $("passThroughAudio").checked;
+
     await chrome.storage.sync.set({
       serverHost: host,
       scenario: $("scenario").value,
       verifyAt,
       criticalAt,
       cooldownSec: Math.max(5, Math.min(300, Number($("cooldownSec").value) || 15)),
+      passThroughAudio,
     });
     $("serverHost").value = host;
     $("verifyAt").value = verifyAt;

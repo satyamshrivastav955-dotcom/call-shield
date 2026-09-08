@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <title>antAI Guardian</title>
     <script src="../shared/risk.js"></script>
+    <script src="../shared/platform.js"></script>
+    <script src="../shared/incident.js"></script>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
@@ -12,7 +14,25 @@
       <span id="models" class="models">models: checking…</span>
     </header>
 
-    <div id="status-line" class="status-line">Not protecting any tab</div>
+    <!-- Meeting Detection Banner (Google Meet, Zoom, Teams) -->
+    <div id="meeting-banner" class="meeting-banner" hidden>
+      <div class="meeting-info">
+        <span id="meeting-icon" class="meeting-icon">📹</span>
+        <span id="meeting-title" class="meeting-title">Meeting call detected</span>
+      </div>
+      <button id="meeting-protect-btn" class="meeting-btn" type="button">Protect this call / कॉल सुरक्षित करें</button>
+    </div>
+
+    <div id="status-line" class="status-line">Not protecting any tab / कोई टैब सुरक्षित नहीं</div>
+
+    <!-- Audio Streaming Live Visualizer -->
+    <div id="audio-visualizer" class="audio-visualizer" hidden>
+      <span class="pulse-dot"></span>
+      <span id="audio-meter-label" class="audio-label">Live Audio / ऑडियो सक्रिय</span>
+      <div class="meter-bar-track">
+        <div id="meter-bar-fill" class="meter-bar-fill"></div>
+      </div>
+    </div>
 
     <div class="gauge">
       <svg viewBox="0 0 120 66" width="150" height="83" aria-hidden="true">
@@ -28,19 +48,35 @@
 
     <div class="rec">
       <span class="rec-label">RECOMMENDATION / सिफारिश</span>
-      <p id="rec-text" class="rec-text">No analysis yet.</p>
+      <p id="rec-text" class="rec-text">No analysis yet / अभी तक कोई विश्लेषण नहीं।</p>
     </div>
 
-    <button id="toggle" class="primary" type="button">Protect this tab</button>
+    <button id="toggle" class="primary" type="button">Protect this tab / टैब सुरक्षित करें</button>
     <p id="error" class="error" hidden></p>
 
     <div class="scan">
-      <button id="scan" class="secondary" type="button">Scan text on this page</button>
-      <p class="hint">Select a message first, or the whole page text is checked. Needs an account (Options).</p>
+      <button id="scan" class="secondary" type="button">Scan text on this page / पेज टेक्स्ट स्कैन करें</button>
+      <p class="hint">Select text first, or checks whole page. Needs account in Options. / पहले टेक्स्ट चुनें या पूरा पेज जांचें।</p>
       <div id="scan-result" class="scan-result" hidden></div>
-      <button id="watch" class="secondary" type="button">Watch page text (live)</button>
-      <p class="hint">Continuously checks new messages/captions on this tab and alerts on scam language. Opt-in per tab.</p>
+      <button id="watch" class="secondary" type="button">Watch page text (live) / लाइव टेक्स्ट निगरानी</button>
+      <p class="hint">Continuously alerts on scam language / संदिग्ध भाषा पर तत्काल चेतावनी।</p>
     </div>
+
+    <!-- Incident History Collapsible Section -->
+    <details id="incidents-details" class="incidents-panel">
+      <summary class="incidents-summary">
+        <span>Incident History / घटना इतिहास</span>
+        <span id="popup-incidents-count" class="incidents-badge">0</span>
+      </summary>
+      <div id="popup-incidents-list" class="popup-incidents-list">
+        <p class="popup-empty-hint">No incidents recorded / कोई घटना दर्ज नहीं</p>
+      </div>
+      <div class="portal-footer">
+        <a href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer" class="portal-link">
+          🚨 Report on cybercrime.gov.in (Helpline 1930)
+        </a>
+      </div>
+    </details>
 
     <footer>
       <a href="#" id="options-link">Options / विकल्प</a>

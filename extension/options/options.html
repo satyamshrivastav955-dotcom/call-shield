@@ -61,6 +61,31 @@
         <p class="hint">At most one notification per interval during a high-risk call (default 15 s).</p>
       </section>
 
+      <section>
+        <label class="checkbox-container" for="passThroughAudio">
+          <input id="passThroughAudio" type="checkbox" checked />
+          <span>Pass-through tab audio to speakers / टैब ऑडियो स्पीकर पर चलाएं</span>
+        </label>
+        <p class="hint">Keep tab/meeting audio audible in your speakers while antAI is monitoring (recommended). When disabled, captured audio is muted on speakers.</p>
+      </section>
+
+      <section id="incidents-section">
+        <div class="section-title-row">
+          <label>Incident Logs / घटना लॉग</label>
+          <span id="incidents-count" class="badge-count">0 recorded</span>
+        </div>
+        <p class="hint">Elevated risk events logged locally for cybercrime reporting (Helpline 1930 / cybercrime.gov.in).</p>
+        
+        <div class="incident-actions">
+          <button id="export-incidents" class="inline" type="button">Export Incidents (JSON) / निर्यात करें</button>
+          <button id="clear-incidents" class="inline danger" type="button">Clear History / इतिहास हटाएं</button>
+        </div>
+
+        <div id="incidents-container" class="incidents-container">
+          <p class="hint empty-hint">No incidents recorded yet.</p>
+        </div>
+      </section>
+
       <div class="actions">
         <button id="save" type="button">Save / सहेजें</button>
         <span id="saved" class="saved" hidden>Saved ✓</span>
@@ -73,6 +98,8 @@
         extension shows "unavailable", never a fake safe score.
       </p>
     </main>
+    <script src="../shared/risk.js"></script>
+    <script src="../shared/incident.js"></script>
     <script src="options.js"></script>
   </body>
 </html>

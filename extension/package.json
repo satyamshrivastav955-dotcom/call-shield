@@ -1,0 +1,9 @@
+{
+  "name": "antai-guardian-extension",
+  "version": "0.2.0",
+  "type": "module",
+  "description": "antAI Guardian browser extension — real-time deepfake audio and text fraud protection",
+  "scripts": {
+    "test": "node test/textscan_test.mjs && node test/risk_test.mjs && node test/platform_test.mjs && node test/incident_test.mjs"
+  }
+}

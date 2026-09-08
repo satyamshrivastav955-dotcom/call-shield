@@ -9,6 +9,7 @@ Thumbs.db
 *.env.local
 *.env.*.local
 local.properties
+.wrangler/
 
 # Logs & Runtime Dumps
 *.log
@@ -48,6 +49,10 @@ build/
 
 # Node.js & Web
 node_modules/
+.next/
+web/.next/
+tools/
+server/tunnel_url.txt
 SimpleVideoCallReacJs/build/
 SimpleVideoCallReacJs/dist/
 SimpleVideoCallBackend/node_modules/

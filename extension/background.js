@@ -6,7 +6,7 @@
 // ui_overlay.py band thresholds). Every rendered number comes from the server's
 // normalized_result — nothing is fabricated here.
 
-importScripts("shared/risk.js");
+importScripts("shared/risk.js", "shared/platform.js", "shared/incident.js");
 
 const DEFAULTS = {
   serverHost: "localhost:8765",
@@ -14,6 +14,7 @@ const DEFAULTS = {
   verifyAt: 50,
   criticalAt: 70,
   cooldownSec: 15,
+  passThroughAudio: true,
 };
 
 // ── State (survives SW restarts because it's cheap to rebuild from offscreen) ──
@@ -28,6 +29,9 @@ const state = {
   models: null, // {ready: bool, detail: {name: bool}}
   verifiedUntil: 0, // "I verified" snooze (ms epoch)
   lastNotified: 0, // cooldown bookkeeping (notifications.py port)
+  audioLevel: 0, // latest audio rms level from offscreen
+  platform: null, // current platform info {id, name, icon, isMeeting}
+  sessionKey: null, // session identifier for active capture
 };
 
 async function getConfig() {
@@ -42,6 +46,35 @@ function httpBase(host) {
   const secure = /^wss:\/\//.test(raw) || /^https:\/\//.test(raw);
   const h = raw.replace(/^wss?:\/\//, "").replace(/^https?:\/\//, "").replace(/\/+$/, "");
   return `${secure ? "https" : "http"}://${h}`;
+}
+
+// ── Incidents ring buffer (up to 50 items) ────────────────────────────────────
+async function getIncidents() {
+  try {
+    const { incidents } = await chrome.storage.local.get({ incidents: [] });
+    return Array.isArray(incidents) ? incidents : [];
+  } catch {
+    return [];
+  }
+}
+
+async function saveIncident(inc) {
+  if (!inc) return;
+  try {
+    const incidents = await getIncidents();
+    const existingIdx = incidents.findIndex(
+      (i) => i.sessionKey && inc.sessionKey && i.sessionKey === inc.sessionKey
+    );
+    if (existingIdx >= 0) {
+      if (inc.risk >= (incidents[existingIdx].risk || 0)) {
+        incidents[existingIdx] = { ...incidents[existingIdx], ...inc, id: incidents[existingIdx].id };
+      }
+    } else {
+      incidents.unshift(inc);
+    }
+    const trimmed = incidents.slice(0, 50);
+    await chrome.storage.local.set({ incidents: trimmed });
+  } catch {}
 }
 
 // MV3 SWs can be killed mid-call — write state through to session storage and
@@ -60,6 +93,9 @@ async function persist() {
         models: state.models,
         verifiedUntil: state.verifiedUntil,
         lastNotified: state.lastNotified,
+        audioLevel: state.audioLevel,
+        platform: state.platform,
+        sessionKey: state.sessionKey,
       },
     });
   } catch {}
@@ -122,10 +158,25 @@ async function startCapture(tabId) {
     broadcast();
     return;
   }
+
+  let platformInfo = null;
+  let platformContext = null;
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    platformInfo = AntaiPlatform.detectPlatform(tab?.url, tab?.title);
+    platformContext = AntaiPlatform.formatStartContext(platformInfo, tab);
+  } catch {
+    platformInfo = AntaiPlatform.detectPlatform(null, null);
+    platformContext = AntaiPlatform.formatStartContext(platformInfo, null);
+  }
+
   state.running = true;
   state.tabId = tabId;
   state.error = null;
   state.latest = null;
+  state.audioLevel = 0;
+  state.platform = platformInfo;
+  state.sessionKey = `call_${tabId}_${Date.now()}`;
   state.connection = "connecting";
   state.verifiedUntil = 0;
   broadcast();
@@ -145,6 +196,7 @@ async function startCapture(tabId) {
       streamId,
       tabId,
       cfg,
+      platform: platformContext,
     });
     // Inject HUD into the protected tab (styles are inlined in its shadow root).
     await chrome.scripting.executeScript({
@@ -168,6 +220,8 @@ async function stopCapture(reason) {
   }
   state.running = false;
   state.connection = "closed";
+  state.audioLevel = 0;
+  state.sessionKey = null;
   state.error = reason === "stopped" ? null : reason;
   broadcast();
   if (chrome.offscreen.closeDocument && (await hasOffscreen())) {
@@ -235,6 +289,25 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         state.latest = msg.data;
         const cfg = await getConfig();
         maybeNotify(msg.data, cfg);
+
+        // Auto-save incident when risk >= verifyAt or band in ['verify', 'critical']
+        const risk = Number(msg.data.risk);
+        const band = String(msg.data.band || "").toLowerCase();
+        if ((isFinite(risk) && risk >= cfg.verifyAt) || band === "verify" || band === "critical") {
+          const platformName = (state.platform && state.platform.name) || "Web Page";
+          const inc = AntaiIncident.createIncident({
+            type: "audio",
+            platform: platformName,
+            risk: isFinite(risk) ? risk : 0,
+            band,
+            scamType: msg.data.scam_type || (band === "critical" ? "Deepfake / Voice Scam" : null),
+            signals: msg.data,
+            recommendation: msg.data.recommendation || "",
+            sessionKey: state.sessionKey || `call_${state.tabId}`,
+          });
+          await saveIncident(inc);
+        }
+
         broadcast();
         break;
       }
@@ -246,6 +319,50 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       case "antai-hud-stop":
         await stopCapture("stopped from HUD");
         break;
+      case "antai-audio-meter":
+        state.audioLevel = typeof msg.level === "number" ? msg.level : 0;
+        broadcast();
+        break;
+      case "antai-get-incidents": {
+        const incidents = await getIncidents();
+        sendResponse({ ok: true, incidents });
+        break;
+      }
+      case "antai-clear-incidents": {
+        await chrome.storage.local.set({ incidents: [] });
+        sendResponse({ ok: true });
+        break;
+      }
+      case "antai-copy-fir": {
+        let inc = msg.incident;
+        if (!inc) {
+          if (state.latest && (state.latest.risk || state.latest.band)) {
+            inc = AntaiIncident.createIncident({
+              type: "audio",
+              platform: (state.platform && state.platform.name) || "Web Page",
+              risk: state.latest.risk,
+              band: state.latest.band,
+              scamType: state.latest.scam_type || null,
+              signals: state.latest,
+              recommendation: state.latest.recommendation,
+              sessionKey: state.sessionKey,
+            });
+          } else if (state.latestText) {
+            inc = AntaiIncident.createIncident({
+              type: "text",
+              platform: "Web Page",
+              risk: state.latestText.risk,
+              band: state.latestText.band,
+              scamType: state.latestText.scamType,
+              signals: { prosody: { scam_prob: state.latestText.risk / 100 } },
+              recommendation: state.latestText.recommendation,
+            });
+          }
+        }
+        const text = inc ? AntaiIncident.formatFirDraft(inc) : "";
+        sendResponse({ ok: true, text, incident: inc });
+        break;
+      }
       case "antai-scan-text": {
         // Page-text scan → POST /api/notify/external (Bearer auth, real
         // agentic verdict — never fabricated client-side). Used by BOTH the
@@ -283,6 +400,37 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             };
             state.latestText = { ...nr, scamType: v.scam_type || null, ts: Date.now() };
             maybeNotify(nr, cfg);
+
+            const risk = Number(data.risk_score);
+            const band = String(v.band || "").toLowerCase();
+            if ((isFinite(risk) && risk >= cfg.verifyAt) || band === "verify" || band === "critical") {
+              let tabPlatform = "Web Page";
+              if (sender?.tab) {
+                tabPlatform = AntaiPlatform.detectPlatform(sender.tab.url, sender.tab.title).name;
+              } else if (msg.tabId) {
+                try {
+                  const t = await chrome.tabs.get(msg.tabId);
+                  tabPlatform = AntaiPlatform.detectPlatform(t?.url, t?.title).name;
+                } catch {}
+              }
+              const inc = AntaiIncident.createIncident({
+                type: "text",
+                platform: tabPlatform,
+                risk: isFinite(risk) ? risk : 0,
+                band,
+                scamType: v.scam_type || "Page Text Scam",
+                signals: {
+                  prosody: {
+                    scam_prob: risk / 100,
+                    urgency: v.urgency || null,
+                  },
+                },
+                recommendation: nr.recommendation || "",
+                sessionKey: `textscan_${Date.now()}`,
+              });
+              await saveIncident(inc);
+            }
+
             broadcast();
           }
           sendResponse({ ok: res.ok, data });

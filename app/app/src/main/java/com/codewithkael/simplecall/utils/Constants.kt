@@ -18,29 +18,69 @@ object Constants {
     // the same user-entered host is reused — only the port differs.
     const val ANTAI_PORT = 8765
 
+    fun cleanHost(raw: String): String {
+        var h = raw.trim()
+        if (h.startsWith("https://", ignoreCase = true)) h = h.substring(8)
+        else if (h.startsWith("http://", ignoreCase = true)) h = h.substring(7)
+        else if (h.startsWith("wss://", ignoreCase = true)) h = h.substring(6)
+        else if (h.startsWith("ws://", ignoreCase = true)) h = h.substring(5)
+        return h.trimEnd('/')
+    }
+
+    fun isCloudflareOrSecureDomain(raw: String): Boolean {
+        val h = cleanHost(raw)
+        return raw.startsWith("https://", ignoreCase = true) ||
+               raw.startsWith("wss://", ignoreCase = true) ||
+               h.contains(".trycloudflare.com", ignoreCase = true) ||
+               h.contains(".workers.dev", ignoreCase = true) ||
+               h.contains(".pages.dev", ignoreCase = true)
+    }
+
     // Emulator note: to test on an Android emulator instead of a phone, enter
     // 10.0.2.2 as the server host (the emulator's alias for the host machine).
-    fun getWebSocketUrl(host: String, username: String) =
-        "ws://$host:$SIGNALING_PORT/?username=$username"
+    fun getWebSocketUrl(host: String, username: String): String {
+        val h = cleanHost(host)
+        return if (isCloudflareOrSecureDomain(host)) {
+            // Cloudflare Worker / Tunnel runs over secure WSS without custom port
+            "wss://$h/?username=$username"
+        } else {
+            "ws://$h:$SIGNALING_PORT/?username=$username"
+        }
+    }
 
     // Control channel for the antAI real-time analysis tap: carries the
     // send-only WebRTC offer/ICE for scam detection AND receives the live
     // transcript / verdict / guidance / report pushes.
-    fun getAntaiTapUrl(host: String, username: String) =
-        "ws://$host:$ANTAI_PORT/ws/tap?user=$username"
-
-    // ---- Messaging / notification-guard (antAI REST + chat WebSocket) ----
-    // These reuse the SAME laptop host as calling; only the antAI port is used.
-    // They are additive to the calling path and never touch it.
+    fun getAntaiTapUrl(host: String, username: String): String {
+        val h = cleanHost(host)
+        return if (isCloudflareOrSecureDomain(host)) {
+            "wss://$h/ws/tap?user=$username"
+        } else {
+            "ws://$h:$ANTAI_PORT/ws/tap?user=$username"
+        }
+    }
 
     // REST base for auth, chat send/history, external-notify (SMS + app notifs),
     // and contacts. See server gateway/rest_api.py.
-    fun getAntaiRestBase(host: String) = "http://$host:$ANTAI_PORT"
+    fun getAntaiRestBase(host: String): String {
+        val h = cleanHost(host)
+        return if (isCloudflareOrSecureDomain(host)) {
+            "https://$h"
+        } else {
+            "http://$h:$ANTAI_PORT"
+        }
+    }
 
     // Chat WebSocket: RECEIVE-only in practice (incoming chat.recv + verdict/
     // freeze pushes over the realtime hub). Auth via the bearer token in query.
-    fun getAntaiChatWsUrl(host: String, token: String) =
-        "ws://$host:$ANTAI_PORT/ws/chat?token=$token"
+    fun getAntaiChatWsUrl(host: String, token: String): String {
+        val h = cleanHost(host)
+        return if (isCloudflareOrSecureDomain(host)) {
+            "wss://$h/ws/chat?token=$token"
+        } else {
+            "ws://$h:$ANTAI_PORT/ws/chat?token=$token"
+        }
+    }
 
     // SharedPreferences store shared with MainViewModel so the messaging layer
     // reads the very same server host the user set on the calls screen.
