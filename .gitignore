@@ -27,6 +27,7 @@ hs_err_pid*.log
 .idea/
 *.iml
 .vscode/
+.cursor/
 *.sublime-project
 *.sublime-workspace
 
