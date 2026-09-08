@@ -18,6 +18,9 @@ yarn-error.log*
 hs_err_pid*.log
 *.zip
 *.tar.gz
+/*.png
+/add-quatarly-models.ps1
+/b.sh
 
 # IDE & Editor files
 .idea/
