@@ -23,6 +23,8 @@ const state = {
   connection: "closed", // connecting | open | closed | error
   error: null,
   latest: null, // last normalized_result (popup shows this when WS is down)
+  latestText: null, // last page-text scan verdict {risk, band, recommendation, scamType, ts}
+  textScan: { active: false, tabId: null }, // continuous page-text scanner target
   models: null, // {ready: bool, detail: {name: bool}}
   verifiedUntil: 0, // "I verified" snooze (ms epoch)
   lastNotified: 0, // cooldown bookkeeping (notifications.py port)
@@ -53,6 +55,8 @@ async function persist() {
         connection: state.connection,
         error: state.error,
         latest: state.latest,
+        latestText: state.latestText,
+        textScan: state.textScan,
         models: state.models,
         verifiedUntil: state.verifiedUntil,
         lastNotified: state.lastNotified,
@@ -244,7 +248,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         break;
       case "antai-scan-text": {
         // Page-text scan → POST /api/notify/external (Bearer auth, real
-        // agentic verdict — never fabricated client-side).
+        // agentic verdict — never fabricated client-side). Used by BOTH the
+        // popup one-shot button and the continuous content scanner.
         const cfg = await getConfig();
         if (!cfg.token) {
           sendResponse({ ok: false, error: "Sign in first — Options → Account." });
@@ -263,9 +268,61 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             sendResponse({ ok: false, error: "Session expired — sign in again in Options." });
             break;
           }
-          sendResponse({ ok: res.ok, data: await res.json().catch(() => null) });
+          const data = await res.json().catch(() => null);
+          // A REAL, ingested verdict with a numeric risk surfaces through the
+          // same notification (15s cooldown) + HUD path as the audio tap, so a
+          // continuous scan raises an alert without the popup being open. A
+          // keyword-gated benign message (ingested:false) is NOT an alert — that
+          // is an honest "no scam signal", never a fabricated safe verdict.
+          if (data && data.ingested === true && isFinite(Number(data.risk_score))) {
+            const v = data.verdict || {};
+            const nr = {
+              risk: Number(data.risk_score),
+              band: v.band || null,
+              recommendation: v.action || v.why || v.verdict || null,
+            };
+            state.latestText = { ...nr, scamType: v.scam_type || null, ts: Date.now() };
+            maybeNotify(nr, cfg);
+            broadcast();
+          }
+          sendResponse({ ok: res.ok, data });
         } catch {
           sendResponse({ ok: false, error: "Could not reach the antAI server." });
+        }
+        break;
+      }
+      case "antai-textscan-toggle": {
+        // Opt-in continuous page-text scanner. Injected on a user gesture from
+        // the popup (activeTab) — same mechanism as the HUD injection. Off →
+        // tell the content script to disconnect its observer.
+        const tabId = msg.tabId;
+        const on = !(state.textScan.active && state.textScan.tabId === tabId);
+        if (!on) {
+          try { chrome.tabs.sendMessage(tabId, { type: "antai-textscan-stop" }); } catch {}
+          state.textScan = { active: false, tabId: null };
+          broadcast();
+          sendResponse({ ok: true, active: false });
+          break;
+        }
+        const cfg = await getConfig();
+        if (!cfg.token) {
+          sendResponse({ ok: false, error: "Sign in first — Options → Account." });
+          break;
+        }
+        // If it was watching another tab, stop that one first.
+        if (state.textScan.active && state.textScan.tabId != null && state.textScan.tabId !== tabId) {
+          chrome.tabs.sendMessage(state.textScan.tabId, { type: "antai-textscan-stop" }).catch(() => {});
+        }
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId },
+            files: ["content/textscan_core.js", "content/textscan.js"],
+          });
+          state.textScan = { active: true, tabId };
+          broadcast();
+          sendResponse({ ok: true, active: true });
+        } catch (e) {
+          sendResponse({ ok: false, error: e.message || String(e) });
         }
         break;
       }
@@ -281,4 +338,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   if (state.running && tabId === state.tabId) stopCapture("tab closed");
+  if (state.textScan.active && tabId === state.textScan.tabId) {
+    state.textScan = { active: false, tabId: null };
+    broadcast();
+  }
+});
+
+// A navigation/reload drops the injected content script, so the scanner is no
+// longer running even though we think it is — reflect that honestly.
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status === "loading" && state.textScan.active && tabId === state.textScan.tabId) {
+    state.textScan = { active: false, tabId: null };
+    broadcast();
+  }
 });

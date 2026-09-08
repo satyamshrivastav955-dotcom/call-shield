@@ -19,11 +19,13 @@ a fake green.
 ## Architecture
 
 ```
-popup (start/stop, gauge, models-ready indicator)
-  └─ background.js (SW): lifecycle, state, notifications (15 s cooldown port), HUD injection
+popup (start/stop, gauge, models-ready indicator, text-scan toggles)
+  └─ background.js (SW): lifecycle, state, notifications (15 s cooldown port), HUD + scanner injection
        └─ offscreen document: tabCapture stream → AudioWorklet (16k mono f32le) → WebSocket
             └─ server /api/stream/ws → {"type":"update", ...normalized_result}
        └─ content/hud.js|css: floating pill / expandable card on the protected tab
+       └─ content/textscan_core.js + textscan.js: continuous page-text watcher →
+            antai-scan-text → POST /api/notify/external → real agentic verdict
 options: server host, scenario, verify/critical thresholds, notification cooldown
 ```
 
@@ -54,6 +56,15 @@ and cooldown live in Options.
   posts it to `POST /api/notify/external` with the bearer token. The server's agentic
   graph returns the verdict — a benign message comes back unflagged, and that's rendered
   honestly ("no scam-related language detected" / "no actionable risk found").
+- **Watch page text (live)** (popup toggle): injects `content/textscan.js` into the
+  current tab (opt-in, per-tab, activeTab gesture) to *continuously* scan NEW text —
+  chat messages, live captions, incoming mail — as it appears. Each new snippet is
+  deduped and rate-limited (`content/textscan_core.js`) and sent through the same
+  `antai-scan-text` → `POST /api/notify/external` route; a scam verdict raises a desktop
+  notification on the shared 15 s cooldown. It scores nothing locally, skips fields you
+  are typing in and the antAI HUD, and logs one `[antAI text-scan] risk=… band=…` line
+  per snippet to the page console for verification. A keyword-gated benign line is logged
+  as "not scam-related (gated)" — an honest no-signal, never a fabricated safe verdict.
 - **wss:// + token auth**: enter a `wss://host` in Options to stream through a TLS
   reverse proxy. The token rides along as `?token=` on the stream WS; the server always
   validates a provided token, and rejects unauthenticated stream clients when

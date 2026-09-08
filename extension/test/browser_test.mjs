@@ -105,6 +105,25 @@ const scanScam = await evalJS(pop, `new Promise((resolve) => {
 ok(scanScam && scanScam.ok && scanScam.data && scanScam.data.ingested === true, "scam text ingested", JSON.stringify(scanScam).slice(0, 160));
 if (scanScam && scanScam.data) console.log("    scan: risk_score=" + scanScam.data.risk_score + " verdict=" + JSON.stringify(scanScam.data.verdict)?.slice(0, 100));
 
+// ── 3b. Continuous scanner wiring: a scam scan surfaces via state.latestText,
+// and the textscan toggle handler is registered. (Real injection targets a
+// normal web tab via the popup's activeTab gesture in live use; here we only
+// assert the SW contract — a defined {ok} response — since an invented tabId
+// can't be injected.) ────────────────────────────────────────────────────────
+console.log("continuous text-scan wiring");
+const stAfter = await evalJS(pop, `new Promise((resolve) => {
+  chrome.runtime.sendMessage({ type: "antai-get-state" }, resolve);
+})`, true);
+ok(
+  stAfter && stAfter.latestText && typeof stAfter.latestText.risk === "number",
+  "scam scan populated state.latestText (continuous-verdict surface)",
+  JSON.stringify(stAfter && stAfter.latestText)
+);
+const toggleResp = await evalJS(pop, `new Promise((resolve) => {
+  chrome.runtime.sendMessage({ type: "antai-textscan-toggle", tabId: 999999 }, resolve);
+})`, true);
+ok(toggleResp && typeof toggleResp.ok === "boolean", "antai-textscan-toggle handler responds with {ok}", JSON.stringify(toggleResp));
+
 // ── 4. Service worker is alive and error-free ────────────────────────────────
 console.log("service worker");
 const targets = await (await fetch(`${CDP}/json/list`)).json();

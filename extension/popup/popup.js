@@ -76,6 +76,14 @@ function render(state) {
     btn.textContent = "Protect this tab";
     btn.className = "primary";
   }
+
+  // continuous page-text scanner toggle (per-tab, opt-in)
+  const watch = $("watch");
+  if (watch) {
+    const watching = !!(state.textScan && state.textScan.active && state.textScan.tabId === currentTabId);
+    watch.textContent = watching ? "Stop watching page text" : "Watch page text (live)";
+    watch.className = watching ? "danger" : "secondary";
+  }
 }
 
 function refresh() {
@@ -95,6 +103,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("options-link").addEventListener("click", (e) => {
     e.preventDefault();
     chrome.runtime.openOptionsPage();
+  });
+
+  // ── Continuous page-text scanner: inject/remove on this tab (opt-in) ──────
+  $("watch").addEventListener("click", () => {
+    const w = $("watch");
+    w.disabled = true;
+    chrome.runtime.sendMessage({ type: "antai-textscan-toggle", tabId: currentTabId }, (resp) => {
+      w.disabled = false;
+      if (resp && !resp.ok && resp.error) {
+        const box = $("scan-result");
+        box.textContent = "⚠ " + resp.error;
+        box.className = "scan-result warn";
+        box.hidden = false;
+      }
+      refresh();
+    });
   });
 
   // ── Page-text scan → server verdict (POST /api/notify/external) ──────────
