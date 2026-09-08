@@ -4,23 +4,61 @@
 
 @layer base {
   :root {
-    --bg-cyber: #06080e;
-    --chassis-cyber: #0a0f1d;
-    --surface-cyber: #0f172a;
-    --surface-elevated: #162032;
-    --border-cyber: #1c2638;
-    --text-cyber: #f8fafc;
-    --text-muted: #94a3b8;
+    /* UI-UX Pro Max Design Tokens */
+    --color-background: #030712;
+    --color-chassis: #060913;
+    --color-surface: #0c1322;
+    --color-surface-elevated: #111a2e;
+    --color-border: #1c2638;
+    --color-border-highlight: #2d3e58;
+    --color-primary: #0284c7;
+    --color-primary-light: #38bdf8;
+    --color-accent: #dc2626;
+    --color-verified: #10b981;
+    --color-warning: #f59e0b;
+    --color-foreground: #f8fafc;
+    --color-muted: #94a3b8;
+    --color-ring: #38bdf8;
+    
+    --bg-cyber: var(--color-background);
+    --chassis-cyber: var(--color-chassis);
+    --surface-cyber: var(--color-surface);
+    --surface-elevated: var(--color-surface-elevated);
+    --border-cyber: var(--color-border);
+    --text-cyber: var(--color-foreground);
+    --text-muted: var(--color-muted);
   }
 
   body {
-    background-color: var(--bg-cyber);
-    color: var(--text-cyber);
+    background-color: var(--color-background);
+    color: var(--color-foreground);
     font-family: var(--font-sans), Inter, -apple-system, sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Accessible focus indicators for keyboard navigation */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Accessibility: Prefers reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   /* Tactical custom scrollbar */
