@@ -15,25 +15,25 @@ import androidx.compose.ui.graphics.Color
  * one visual language.
  */
 
-// ---- Brand / primary (deep teal) ----
-val AntaiTeal = Color(0xFF0E7C7B)          // primary brand
-val AntaiTealDark = Color(0xFF0A5F5E)      // pressed / dark-scheme primary
-val AntaiTealLight = Color(0xFF3AA6A4)     // primary on dark surfaces
-val AntaiTealContainer = Color(0xFFD1ECEB) // tinted container (chips, selected)
-val AntaiOnTealContainer = Color(0xFF00201F)
+// ---- CallShield Brand / Primary (Deep Forest Green & Teal) ----
+val AntaiTeal = Color(0xFF0F392E)          // CallShield deep forest green primary
+val AntaiTealDark = Color(0xFF09231C)      // pressed / dark-scheme primary
+val AntaiTealLight = Color(0xFF4E8A68)     // sage green on dark surfaces
+val AntaiTealContainer = Color(0xFFD5E8DD) // soft sage container
+val AntaiOnTealContainer = Color(0xFF041A13)
 
-// ---- Secondary action (WhatsApp-style send green) ----
-val AntaiGreen = Color(0xFF1EA362)
-val AntaiGreenContainer = Color(0xFFD6F3E3)
-val AntaiOnGreenContainer = Color(0xFF00210F)
+// ---- Secondary Action & Accents (CallShield Leaf Sage Green) ----
+val AntaiGreen = Color(0xFF4F8B68)         // CallShield leaf green
+val AntaiGreenContainer = Color(0xFFD7ECE0)
+val AntaiOnGreenContainer = Color(0xFF0C2B1D)
 
-// ---- Neutrals (cool, calm) ----
-val AntaiBackground = Color(0xFFF6F7F9)    // app background
+// ---- Neutrals (Warm Cream & Clean White) ----
+val AntaiBackground = Color(0xFFF8F6F0)    // CallShield warm cream canvas
 val AntaiSurface = Color(0xFFFFFFFF)       // cards, sheets, bars
-val AntaiSurfaceVariant = Color(0xFFEFF1F4) // subtle fills (search, bubbles-in)
-val AntaiInk = Color(0xFF111827)           // primary text (slate near-black)
-val AntaiMuted = Color(0xFF6B7280)         // secondary text
-val AntaiHairline = Color(0xFFE3E6EA)      // dividers / outlines
+val AntaiSurfaceVariant = Color(0xFFEEEDE8) // subtle fills (search, bubble in)
+val AntaiInk = Color(0xFF0E1A16)           // primary text
+val AntaiMuted = Color(0xFF5D6B65)         // secondary text
+val AntaiHairline = Color(0xFFDFE3DD)      // dividers / outlines
 
 // ---- Risk semantic scale (Truecaller-style badges) ----
 // passive/safe -> verify/caution -> critical/high-risk
@@ -45,13 +45,13 @@ val RiskCritical = Color(0xFFC62828)
 val RiskCriticalBg = Color(0xFFFDECEA)
 
 // ---- Chat bubbles ----
-val BubbleOutgoing = Color(0xFFDCF6EC)     // messages I sent (soft green tint)
+val BubbleOutgoing = Color(0xFFD8EFE2)     // messages I sent (CallShield soft tint)
 val BubbleIncoming = Color(0xFFFFFFFF)     // messages received
 
-// ---- Dark scheme (used by system dark mode; call screen uses its own overlays) ----
-val AntaiInkDark = Color(0xFF0E1512)
-val AntaiSurfaceDark = Color(0xFF161D1B)
-val AntaiSurfaceVariantDark = Color(0xFF202826)
-val AntaiOnDark = Color(0xFFE6EAE8)
-val AntaiMutedDark = Color(0xFF9AA5A2)
-val AntaiHairlineDark = Color(0xFF2C3532)
+// ---- Dark scheme (used by system dark mode) ----
+val AntaiInkDark = Color(0xFF081510)
+val AntaiSurfaceDark = Color(0xFF0F211A)
+val AntaiSurfaceVariantDark = Color(0xFF182D24)
+val AntaiOnDark = Color(0xFFE4EDE7)
+val AntaiMutedDark = Color(0xFF90A39A)
+val AntaiHairlineDark = Color(0xFF233A30)

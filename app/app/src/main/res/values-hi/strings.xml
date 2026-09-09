@@ -1,5 +1,5 @@
-﻿<resources>
-    <string name="app_name">antAI</string>
+<resources>
+    <string name="app_name">CallShield</string>
 
     <!-- Risk bands -->
     <string name="risk_band_critical">उच्च जोखिम (High Risk)</string>
@@ -12,7 +12,7 @@
     <string name="risk_headline_critical">इस कॉल पर तुरंत ध्यान देने की आवश्यकता है</string>
     <string name="risk_headline_caution">कुछ असामान्य प्रतीत हो रहा है</string>
     <string name="risk_headline_safe">अब तक कोई खतरा नहीं पाया गया</string>
-    <string name="risk_headline_default">कॉल सुरक्षा</string>
+    <string name="risk_headline_default">CallShield सुरक्षा</string>
 
     <!-- Risk score & signals -->
     <string name="risk_score_format">जोखिम %1$d/100</string>
@@ -50,8 +50,8 @@
     <string name="label_why_flagged">फ्लैग करने का कारण</string>
 
     <!-- Protection & Mode chips -->
-    <string name="hero_protecting_calls">antAI आपकी कॉल्स की सुरक्षा कर रहा है</string>
-    <string name="hero_protection_subtitle">रियल-टाइम स्कैम, AI-वॉइस और क्लोनिंग सुरक्षा</string>
+    <string name="hero_protecting_calls">CallShield आपकी कॉल्स की सुरक्षा कर रहा है</string>
+    <string name="hero_protection_subtitle">सुरक्षित संवाद, एक उज्जवल कल (Safer conversations)</string>
     <string name="mode_on_device">ऑन-डिवाइस</string>
     <string name="mode_server_backed">सर्वर-कनेक्टेड</string>
     <string name="mode_offline">ऑफलाइन</string>
@@ -59,8 +59,8 @@
     <string name="mode_local_only">लोकल-ओनली</string>
 
     <!-- Recording check flow (SERVER path) -->
-    <string name="card_check_recording_title">फ़ॉरवर्ड किया क्लिप जांचें (सर्वर)</string>
-    <string name="card_check_recording_desc">फ़ॉरवर्ड किए वॉइस नोट या क्लिप को पूरी डीपफेक और स्कैम जांच के लिए antAI सर्वर पर भेजें (कनेक्शन ज़रूरी)</string>
+    <string name="card_check_recording_title">फ़ॉरवर्ड किया क्लिप जांचें</string>
+    <string name="card_check_recording_desc">फ़ॉरवर्ड किए वॉइस नोट या क्लिप को पूरी डीपफेक और स्कैम जांच के लिए CallShield सर्वर पर भेजें (कनेक्शन ज़रूरी)</string>
     <string name="btn_pick_audio">ऑडियो फ़ाइल चुनें</string>
     <string name="recording_analyzing">ऑडियो का विश्लेषण जारी है…</string>
     <string name="recording_success">विश्लेषण पूरा हुआ</string>

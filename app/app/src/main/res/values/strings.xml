@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">antAI</string>
+    <string name="app_name">CallShield</string>
 
     <!-- Risk bands -->
     <string name="risk_band_critical">High risk</string>
@@ -12,7 +12,7 @@
     <string name="risk_headline_critical">This session needs attention</string>
     <string name="risk_headline_caution">Something looks unusual</string>
     <string name="risk_headline_safe">No threat detected so far</string>
-    <string name="risk_headline_default">Call protection</string>
+    <string name="risk_headline_default">CallShield Protection</string>
 
     <!-- Risk score & signals -->
     <string name="risk_score_format">Risk %1$d/100</string>
@@ -50,18 +50,17 @@
     <string name="label_why_flagged">Why flagged</string>
 
     <!-- Protection & Mode chips -->
-    <string name="hero_protecting_calls">antAI is guarding your calls</string>
-    <string name="hero_protection_subtitle">Real-time scam, AI-voice &amp; impersonation shield</string>
+    <string name="hero_protecting_calls">CallShield is guarding your calls</string>
+    <string name="hero_protection_subtitle">Safer conversations, a brighter tomorrow</string>
     <string name="mode_on_device">On-device</string>
     <string name="mode_server_backed">Server-backed</string>
     <string name="mode_offline">Offline</string>
     <string name="mode_connected">Connected</string>
     <string name="mode_local_only">Local-only</string>
 
-    <!-- Recording check flow (SERVER path: uploads the clip to the antAI backend.
-         Distinct from the on-device Shield's offline "Check a recording" button.) -->
-    <string name="card_check_recording_title">Check a forwarded clip (server)</string>
-    <string name="card_check_recording_desc">Upload a forwarded voice note or clip for a full deepfake &amp; scam scan on the antAI server (needs connection)</string>
+    <!-- Recording check flow (SERVER path: uploads the clip to the CallShield backend.) -->
+    <string name="card_check_recording_title">Check a forwarded clip</string>
+    <string name="card_check_recording_desc">Upload a voice note or clip for a full deepfake &amp; scam scan on CallShield (needs connection)</string>
     <string name="btn_pick_audio">Select audio file</string>
     <string name="recording_analyzing">Analyzing audio stream…</string>
     <string name="recording_success">Analysis complete</string>
