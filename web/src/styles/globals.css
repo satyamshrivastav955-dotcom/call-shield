@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* UI-UX Pro Max Design Tokens */
+    --color-background: #030712;
+    --color-chassis: #060913;
+    --color-surface: #0c1322;
+    --color-surface-elevated: #111a2e;
+    --color-border: #1c2638;
+    --color-border-highlight: #2d3e58;
+    --color-primary: #0284c7;
+    --color-primary-light: #38bdf8;
+    --color-accent: #dc2626;
+    --color-verified: #10b981;
+    --color-warning: #f59e0b;
+    --color-foreground: #f8fafc;
+    --color-muted: #94a3b8;
+    --color-ring: #38bdf8;
+    
+    --bg-cyber: var(--color-background);
+    --chassis-cyber: var(--color-chassis);
+    --surface-cyber: var(--color-surface);
+    --surface-elevated: var(--color-surface-elevated);
+    --border-cyber: var(--color-border);
+    --text-cyber: var(--color-foreground);
+    --text-muted: var(--color-muted);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans), Inter, -apple-system, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Accessible focus indicators for keyboard navigation */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Accessibility: Prefers reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Tactical custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #06080e;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1c2638;
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2d3e58;
+  }
+}
+
+@layer utilities {
+  /* Tactical hairline background grid */
+  .bg-tactical-grid {
+    background-size: 32px 32px;
+    background-image: 
+      linear-gradient(to right, rgba(28, 38, 56, 0.35) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(28, 38, 56, 0.35) 1px, transparent 1px);
+  }
+
+  /* Sub-pixel security frame border */
+  .border-tactical {
+    border: 1px solid #1c2638;
+  }
+  .border-tactical-highlight {
+    border: 1px solid #2d3e58;
+  }
+
+  /* Threat Glows */
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(2, 132, 199, 0.25);
+  }
+  .glow-red {
+    box-shadow: 0 0 25px rgba(220, 38, 38, 0.35);
+  }
+  .glow-green {
+    box-shadow: 0 0 20px rgba(5, 150, 105, 0.25);
+  }
+  .glow-amber {
+    box-shadow: 0 0 20px rgba(217, 119, 6, 0.25);
+  }
+
+  /* Corner brackets for tactical module boxes */
+  .corner-bracket {
+    position: relative;
+  }
+  .corner-bracket::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 6px;
+    height: 6px;
+    border-top: 2px solid #38bdf8;
+    border-left: 2px solid #38bdf8;
+  }
+  .corner-bracket::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 6px;
+    height: 6px;
+    border-bottom: 2px solid #38bdf8;
+    border-right: 2px solid #38bdf8;
+  }
+}
