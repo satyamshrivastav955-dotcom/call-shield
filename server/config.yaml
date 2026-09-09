@@ -43,7 +43,7 @@ models:
 # (gitignored) — never in this file.
 providers:
   asr: deepgram              # deepgram | faster_whisper
-  voice_deepfake: both       # both | velma | local
+  voice_deepfake: local      # both | velma | local
   llm: groq                  # groq | local
   deepgram:
     model: nova-2            # nova-2 supports multilingual + language detection

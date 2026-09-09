@@ -265,7 +265,15 @@ def load_from_parquet(data: str, audio_col: str | None, label_col: str | None, l
     files = [data] if data.endswith(".parquet") else sorted(glob.glob(os.path.join(data, "*.parquet")))
     if not files:
         raise SystemExit(f"[FAIL] no parquet found at {data}")
-    df = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
+    dfs = []
+    total_loaded = 0
+    for f in files:
+        chunk = pd.read_parquet(f)
+        dfs.append(chunk)
+        total_loaded += len(chunk)
+        if limit and total_loaded >= limit:
+            break
+    df = pd.concat(dfs, ignore_index=True)
     if limit:
         df = df.head(limit)
     cols = list(df.columns)

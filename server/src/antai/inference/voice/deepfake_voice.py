@@ -322,6 +322,12 @@ class VoiceDeepfakeEngine(BaseEngine):
             return {"spoof_prob": None, "label": None, "is_ai_voice": None,
                     "per_model": {}, "ready": False, "backend": "none"}
 
+        if sample_rate != 16000:
+            from .audio_io import to_sample_rate
+            audio, sample_rate = to_sample_rate(audio, sample_rate, 16000)
+            if context_audio is not None:
+                context_audio, _ = to_sample_rate(context_audio, sample_rate, 16000)
+
         velma_p = self._velma_score(audio, sample_rate)
         local: dict | None = None
         if self._use_local and (self._mode == "both" or velma_p is None):
@@ -434,20 +440,7 @@ class VoiceDeepfakeEngine(BaseEngine):
                 per[m["name"]] = float(probs[0][idx].cpu().numpy()) \
                     if probs.shape[1] > idx else float(probs[0][-1])
 
-            # Drop degenerate checkpoints: a model that saturates at ~1.0 on
-            # EVERYTHING (bad fine-tune) is not a signal and would flood the
-            # ensemble with false "spoof" verdicts on real voice.
-            raw = {k: round(v, 3) for k, v in per.items()}
-            per = {k: v for k, v in per.items() if v < 0.999}
-            if not per:
-                # every model saturated -> no confident signal; report a neutral
-                # "uncertain" value rather than 0 (which reads as "real") or 1
-                # (which reads as "fake")
-                log.info("voice deepfake: all models saturated (raw=%s) -> uncertain", raw)
-                return {"spoof_prob": 0.5, "label": "uncertain",
-                        "per_model": raw, "ready": True, "backend": "local"}
-
-            spoof = self._aggregate(per)
+            spoof = max(per.values()) if per else None
             if spoof is None:
                 return {"spoof_prob": None, "label": None, "per_model": {},
                         "ready": True, "backend": "local"}
@@ -464,19 +457,3 @@ class VoiceDeepfakeEngine(BaseEngine):
             log.warning("voice deepfake analyze failed: %s", e)
             return {"spoof_prob": None, "label": None, "per_model": {},
                     "ready": False, "backend": "local"}
-
-    @staticmethod
-    def _aggregate(per: dict[str, float]) -> float | None:
-        """Combine per-model spoof probs, guarding against degenerate models.
-
-        A checkpoint that saturates at 1.0 on EVERYTHING (bad fine-tune) must
-        not dominate the ensemble: if the top model is saturated but another
-        model strongly disagrees, trust the disagreeing model instead.
-        """
-        if not per:
-            return None
-        vals = sorted(per.values())
-        top = vals[-1]
-        if len(vals) >= 2 and top > 0.999 and (top - vals[-2]) > 0.3:
-            return vals[-2]
-        return top
