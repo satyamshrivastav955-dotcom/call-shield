@@ -1,25 +1,25 @@
 <div align="center">
 
-# 🛡️ antAI Guardian
+# 🛡️ CallShield
 ### Autonomous Real-Time Voice Clone, Deepfake & Financial Coercion Defense System
-*(Smart India Hackathon 2026 — Problem Statement PS26104)*
+*(Safer conversations, a brighter tomorrow)*
 
 <!-- Dynamic Animated Typing Banner -->
 <a href="#">
-  <img src="https://readme-typing-svg.demolab.com?font=Space+Grotesk&weight=700&size=24&duration=2500&pause=1000&color=00F5D4&center=true&vCenter=true&multiline=false&width=900&height=65&lines=%F0%9F%9B%A1%EF%B8%8F+Victim-Side+Active+Defense%3A+Zero+Scammer+Cooperation+Needed;%F0%9F%8E%99%EF%B8%8F+AST-ASV5+%2B+wav2vec2+Synthetic+Voice+Clone+Interception;%E2%9A%A1+Compiled+14-Node+LangGraph+Conditional+DAG+%28%3C850ms%29;%F0%9F%9B%91+Autonomous+Pre-Transaction+Freeze+Hold+%26+Explainable+AI;%F0%9F%94%90+Zero-Retention+Biometrics+%7C+Multi-Platform+Ecosystem" alt="antAI Guardian Typing Banner" />
+  <img src="https://readme-typing-svg.demolab.com?font=Space+Grotesk&weight=700&size=24&duration=2500&pause=1000&color=4F8B68&center=true&vCenter=true&multiline=false&width=900&height=65&lines=%F0%9F%9B%A1%EF%B8%8F+Victim-Side+Active+Defense%3A+Zero+Scammer+Cooperation+Needed;%F0%9F%8E%99%EF%B8%8F+AST-ASV5+%2B+wav2vec2+Synthetic+Voice+Clone+Interception;%E2%9A%A1+Compiled+14-Node+LangGraph+Conditional+DAG+%28%3C850ms%29;%F0%9F%9B%91+Autonomous+Pre-Transaction+Freeze+Hold+%26+Explainable+AI;%F0%9F%94%90+Zero-Retention+Biometrics+%7C+Multi-Platform+Ecosystem" alt="CallShield Typing Banner" />
 </a>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Architecture-Victim--Side%20Active%20Defense-00F5D4?style=for-the-badge&logo=shield&logoColor=black" alt="Architecture"/>
-  <img src="https://img.shields.io/badge/Latency-Sub--Second%20%28%3C850ms%29-7928CA?style=for-the-badge&logo=lightning&logoColor=white" alt="Inference Latency"/>
-  <img src="https://img.shields.io/badge/Next.js-14.2.35%20Tactical%20SOC-0284C7?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js 14"/>
+  <img src="https://img.shields.io/badge/Brand-CallShield-0F392E?style=for-the-badge&logo=shield&logoColor=white" alt="CallShield"/>
+  <img src="https://img.shields.io/badge/Architecture-Victim--Side%20Active%20Defense-4F8B68?style=for-the-badge&logo=shield&logoColor=white" alt="Architecture"/>
+  <img src="https://img.shields.io/badge/Latency-Sub--Second%20%28%3C850ms%29-0F392E?style=for-the-badge&logo=lightning&logoColor=white" alt="Inference Latency"/>
   <img src="https://img.shields.io/badge/Android-Jetpack%20Compose%20%2B%20WebRTC-3DDC84?style=for-the-badge&logo=android&logoColor=black" alt="Android"/>
   <img src="https://img.shields.io/badge/Brain-14--Node%20LangGraph%20DAG-FF4F81?style=for-the-badge&logo=langchain&logoColor=white" alt="LangGraph"/>
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License"/>
 </p>
 
 <p align="center">
-  <a href="#-the-hard-problem--why-antai"><img src="https://img.shields.io/badge/💡_The_Why-0D1117?style=flat-square&logoColor=white" alt="The Why"/></a>
+  <a href="#-the-hard-problem--why-callshield"><img src="https://img.shields.io/badge/💡_The_Why-0D1117?style=flat-square&logoColor=white" alt="The Why"/></a>
   <a href="#-live-execution-in-action"><img src="https://img.shields.io/badge/💻_Live_Terminal_Demo-0D1117?style=flat-square&logoColor=white" alt="Live Terminal"/></a>
   <a href="#-interactive-architecture-pipeline"><img src="https://img.shields.io/badge/⚡_Animated_DAG_Pipeline-0D1117?style=flat-square&logoColor=white" alt="Animated Pipeline"/></a>
   <a href="#-production-interfaces--side-by-side-evidence"><img src="https://img.shields.io/badge/📱_UI_Showcase-0D1117?style=flat-square&logoColor=white" alt="UI Showcase"/></a>
@@ -31,13 +31,13 @@
 ---
 
 ### 🚨 *Generative voice cloning now takes 3 seconds of audio. Traditional spam filters never hear the call.*
-**antAI Guardian** is an autonomous, victim-side active defense platform safeguarding vulnerable individuals and financial institutions against generative AI voice clones, deepfake video calls, and high-pressure social engineering coercion in real time.
+**CallShield** is an autonomous, victim-side active defense platform safeguarding vulnerable individuals and financial institutions against generative AI voice clones, deepfake video calls, and high-pressure social engineering coercion in real time.
 
 </div>
 
 ---
 
-## 💡 The Hard Problem & Why antAI?
+## 💡 The Hard Problem & Why CallShield?
 
 ### ❓ The Fundamental Dilemma
 Every legacy anti-scam solution relies on **carrier reputation, blacklists, or scammer cooperation**:
@@ -45,8 +45,8 @@ Every legacy anti-scam solution relies on **carrier reputation, blacklists, or s
 * **3 Seconds to Clone**: Generative TTS engines (*XTTS*, *ElevenLabs*, *Bark*) clone a family member’s voice from a short WhatsApp voice note or Instagram reel.
 * **Psychological Deadlock**: Once a victim is convinced an emergency exists (*"Digital Arrest"*, *"Kidnapped Child"*, *"Customs Drug Parcel"*), warnings on a screen are dismissed.
 
-### 🛡️ The antAI Solution: Victim-Side Active Defense
-antAI operates exclusively on the **protected recipient’s endpoint** (Android phone, Windows desktop, or WebRTC gateway) and inspects incoming communication unilaterally:
+### 🛡️ The CallShield Solution: Victim-Side Active Defense
+CallShield operates exclusively on the **protected recipient’s endpoint** (Android phone, Windows desktop, or WebRTC gateway) and inspects incoming communication unilaterally:
 
 ```
                   ┌────────────────────────────────────────────────────────────┐
@@ -56,7 +56,7 @@ antAI operates exclusively on the **protected recipient’s endpoint** (Android 
                                                 │
                  ┌──────────────────────────────┴──────────────────────────────┐
                  ▼                                                             ▼
-    [ Traditional Spam Filter ]                                   [ 🛡️ antAI Guardian ]
+    [ Traditional Spam Filter ]                                   [ 🛡️ CallShield ]
     • Checks caller ID in registry                                • Taps raw audio stream (16kHz float32 PCM)
     • Unlisted / Spoofed? ➔ PASSES                                • Silero-VAD ➔ AST + wav2vec2 SSL acoustic ensemble
     • Scammer runs panic script                                   • ECAPA-TDNN speaker verification vs family voiceprint
@@ -65,9 +65,9 @@ antAI operates exclusively on the **protected recipient’s endpoint** (Android 
 
 ---
 
-### ⚖️ Feature Contrast: Legacy Blockers vs. antAI Active Defense
+### ⚖️ Feature Contrast: Legacy Blockers vs. CallShield Active Defense
 
-| Attack Surface & Threat Vector | Traditional Spam / Call Blockers | 🛡️ antAI Guardian Active Defense |
+| Attack Surface & Threat Vector | Traditional Spam / Call Blockers | 🛡️ CallShield Active Defense |
 |:---|:---:|:---:|
 | **Generative AI Voice Clone** | ❌ **Bypassed** (Treated as normal audio) | ✅ **Caught in $< 850\text{ms}$** via AST-ASVspoof5 + wav2vec2 SSL ensemble |
 | **Family / Executive Impersonation** | ❌ **Zero Awareness** (No biometric capability) | ✅ **Flagged instantly** via ECAPA-TDNN voiceprint cosine distance |
@@ -81,16 +81,16 @@ antAI operates exclusively on the **protected recipient’s endpoint** (Android 
 
 ## 💻 Live Execution in Action
 
-The following animated execution trace demonstrates antAI intercepting an in-flight cloned voice attack over WebSockets in real time:
+The following execution trace demonstrates CallShield intercepting an in-flight cloned voice attack over WebSockets in real time:
 
 <div align="center">
 
 ```
 ====================================================================================================
- 🛡️  a n t A I   G u a r d i a n   //   T A C T I C A L   E X E C U T I O N   E N G I N E   [4829-E2E]
+ 🛡️  C a l l S h i e l d   //   T A C T I C A L   E X E C U T I O N   E N G I N E   [4829-E2E]
 ====================================================================================================
 ```
-<img src="assets/terminal_card.svg" width="100%" alt="antAI Live Terminal Execution Card" />
+<img src="assets/terminal_card.svg" width="100%" alt="CallShield Live Terminal Execution Card" />
 
 </div>
 
@@ -98,10 +98,10 @@ The following animated execution trace demonstrates antAI intercepting an in-fli
 
 ## ⚡ Interactive Architecture Pipeline
 
-antAI couples multi-source ingestion with an asynchronous **14-node LangGraph state machine** and a mathematically calibrated **9-signal fusion matrix**:
+CallShield couples multi-source ingestion with an asynchronous **14-node LangGraph state machine** and a mathematically calibrated **9-signal fusion matrix**:
 
 <div align="center">
-  <img src="assets/animated_pipeline.svg" width="100%" alt="antAI Animated Architecture Pipeline" />
+  <img src="assets/animated_pipeline.svg" width="100%" alt="CallShield Animated Architecture Pipeline" />
 </div>
 
 <br/>
@@ -148,7 +148,7 @@ antAI couples multi-source ingestion with an asynchronous **14-node LangGraph st
 
 ## 📱 Production Interfaces & Side-by-Side Evidence
 
-antAI delivers native, hardware-optimized clients across mobile, desktop, and web:
+CallShield delivers native, hardware-optimized clients across mobile, desktop, and web:
 
 ### 🚨 In-Call AI Active Defense: Legitimate vs. Attack Interception
 
@@ -165,10 +165,10 @@ antAI delivers native, hardware-optimized clients across mobile, desktop, and we
   </tr>
   <tr>
     <td align="center">
-      <img src="assets/screenshots/antai_deepfake_alert.jpg" width="88%" alt="antAI Deepfake Voice Clone Alert" style="border-radius:10px; border:1px solid #334155;" />
+      <img src="assets/screenshots/antai_deepfake_alert.jpg" width="88%" alt="CallShield Deepfake Voice Clone Alert" style="border-radius:10px; border:1px solid #334155;" />
     </td>
     <td align="center">
-      <img src="assets/screenshots/antai_incall_insight.jpg" width="88%" alt="antAI In-Call AiInsightWindow" style="border-radius:10px; border:1px solid #334155;" />
+      <img src="assets/screenshots/antai_incall_insight.jpg" width="88%" alt="CallShield In-Call AiInsightWindow" style="border-radius:10px; border:1px solid #334155;" />
     </td>
   </tr>
   <tr>
@@ -197,7 +197,7 @@ antAI delivers native, hardware-optimized clients across mobile, desktop, and we
   <tr>
     <td align="center" width="33%">
       <b>🛡️ Armed Calls Dashboard</b><br/>
-      <sub>Device pairing, ID, and active protection pill</sub>
+      <sub>Device pairing, ID, and active protection hero card</sub>
     </td>
     <td align="center" width="33%">
       <b>🎙️ Voiceprint Biometrics</b><br/>
@@ -210,13 +210,13 @@ antAI delivers native, hardware-optimized clients across mobile, desktop, and we
   </tr>
   <tr>
     <td align="center">
-      <img src="assets/screenshots/antai_home_armed.jpg" width="92%" alt="antAI Armed Calls Dashboard" style="border-radius:8px; border:1px solid #334155;" />
+      <img src="assets/screenshots/antai_home_armed.jpg" width="92%" alt="CallShield Armed Calls Dashboard" style="border-radius:8px; border:1px solid #334155;" />
     </td>
     <td align="center">
-      <img src="assets/screenshots/antai_voiceprint_enroll.jpg" width="92%" alt="antAI Voiceprint Enrollment" style="border-radius:8px; border:1px solid #334155;" />
+      <img src="assets/screenshots/antai_voiceprint_enroll.jpg" width="92%" alt="CallShield Voiceprint Enrollment" style="border-radius:8px; border:1px solid #334155;" />
     </td>
     <td align="center">
-      <img src="assets/screenshots/antai_settings.jpg" width="92%" alt="antAI Settings & Scenario Policy" style="border-radius:8px; border:1px solid #334155;" />
+      <img src="assets/screenshots/antai_settings.jpg" width="92%" alt="CallShield Settings & Scenario Policy" style="border-radius:8px; border:1px solid #334155;" />
     </td>
   </tr>
   <tr>
@@ -236,7 +236,7 @@ antAI delivers native, hardware-optimized clients across mobile, desktop, and we
 
 ## 🔮 Multi-Signal AI Fusion Brain
 
-antAI segregates incoming evidence into **Hard** (independently sufficient) and **Soft** (corroborative) indicators to eliminate false alarms:
+CallShield segregates incoming evidence into **Hard** (independently sufficient) and **Soft** (corroborative) indicators to eliminate false alarms:
 
 ```
                             ┌────────────────────────────────────────┐
@@ -271,12 +271,12 @@ antAI segregates incoming evidence into **Hard** (independently sufficient) and 
 
 ## 🚀 Quickstart: 3-Step Deployment
 
-Deploy the full antAI defense system locally in minutes:
+Deploy the full CallShield defense system locally in minutes:
 
 ### 📋 Prerequisites
 * **Python 3.10+** (with PyTorch support)
 * **Node.js 18+** & **npm 9+**
-* **Android Studio Ladybug+** (for Android client build)
+* **Android Studio Ladybug+** (for Android client build with JDK 21)
 
 ---
 
@@ -290,7 +290,7 @@ npm start
 
 ---
 
-### Step 2 ➔ Launch the AI Defense Gateway
+### Step 2 ➔ Launch the CallShield AI Defense Gateway
 ```bash
 cd server
 python -m venv .venv
@@ -304,20 +304,21 @@ python run_dev.py
 
 ### Step 3 ➔ Launch Your Preferred Defense Client
 
-#### Option A: Next.js 14+ Tactical SOC Operations Console
+#### Option A: Android Native Shield (Recommended)
+```bash
+cd app
+./gradlew assembleDebug
+adb install -r -d app/build/outputs/apk/debug/app-debug.apk
+```
+*Install onto any Android 10+ device and point to your local machine's IP (e.g. `http://10.20.143.151:3007` for Signaling, `http://10.20.143.151:8765` for AI).*
+
+#### Option B: Next.js 14+ Tactical SOC Operations Console
 ```bash
 cd web
 npm install
 npm run dev
 ```
 *Open `http://localhost:3000` for the defense landing page, `/dashboard-live` for the live SOC console, and `/dataflow` for the interactive DAG schematic.*
-
-#### Option B: Android Native Shield
-```bash
-cd app
-./gradlew installDebug
-```
-*Install onto any Android 10+ device and point to your local signaling IP (`http://<PC_IP>:3007`).*
 
 #### Option C: Windows Desktop HUD
 ```bash
@@ -339,7 +340,7 @@ python main.py --server ws://localhost:8765 --scenario high_value_txn
 The detection engine is modeled as a compiled **asynchronous conditional DAG** using native LangGraph, ensuring every audio chunk is arbitrated in $< 850\text{ms}$:
 
 <div align="center">
-  <img src="antai_langgraph_architecture.jpg" width="90%" alt="antAI LangGraph Orchestration Architecture" style="border-radius:8px; border:1px solid #334155;" />
+  <img src="antai_langgraph_architecture.jpg" width="90%" alt="CallShield LangGraph Orchestration Architecture" style="border-radius:8px; border:1px solid #334155;" />
 </div>
 
 <br/>
@@ -366,7 +367,7 @@ The detection engine is modeled as a compiled **asynchronous conditional DAG** u
 
 <br/>
 
-antAI computes composite risk score $R \in [0, 100]$ through a calibrated weighted combination:
+CallShield computes composite risk score $R \in [0, 100]$ through a calibrated weighted combination:
 
 $$R = \min\left(100, \; \sum_{i} w_i \cdot S_{\text{hard}, i} \;+\; \min\left(39, \; \sum_{j} v_j \cdot S_{\text{soft}, j}\right)\right)$$
 
@@ -446,57 +447,27 @@ Evaluated against 1,200 real and synthesized multi-dialect scam scenarios across
 ---
 
 <details>
-<summary><b>📋 Deep Dive 5: 15-Point Core Defense Capability Audit</b></summary>
-
-<br/>
-
-Every capability has been audited directly against the production codebase:
-
-| # | System Capability & Defense Requirement | Status | Implementation File Reference |
-|:---:|---|:---:|---|
-| 1 | **Acoustic Synthesis Detection** | ✅ **VERIFIED** | AST-ASVspoof5 + wav2vec2 ensemble (`server/src/antai/inference/voice/deepfake_voice.py`) |
-| 2 | **Prosody & Behavioral Drift** | ✅ **VERIFIED** | Sentence-Transformers MiniLM semantic drift (`server/src/antai/inference/text/`) |
-| 3 | **Voiceprint Biometrics** | ✅ **VERIFIED** | ECAPA-TDNN speaker verification (`server/src/antai/inference/voice/speaker_verify.py`) |
-| 4 | **Continuous 0–100 Risk Score** | ✅ **VERIFIED** | Mathematical dead-zone fusion model streaming over RealtimeHub WebSocket |
-| 5 | **Scenario-Configurable Policies** | ✅ **VERIFIED** | `routine_call`, `high_value_txn`, `privileged_access` (`server/config.yaml`) |
-| 6 | **Contextual Triage Enrichment** | ✅ **VERIFIED** | Request intent triage (OTP, Wire, Credential, Remote Access) |
-| 7 | **Multi-Channel Protective Alerts** | ✅ **VERIFIED** | In-app Compose modals, high-importance Android notifications, Windows HUD toasts |
-| 8 | **Pre-Transaction Freeze Intercept** | ✅ **VERIFIED** | Autonomous hold directives on financial asks with conscious user override modal |
-| 9 | **Institution & Policy Profiles** | ✅ **VERIFIED** | Configurable risk bands and detection sensitivity in app and web settings |
-| 10 | **Ephemeral In-Memory Processing** | ✅ **VERIFIED** | Raw audio processed in RAM and discarded immediately; zero disk audio storage |
-| 11 | **Anonymized Cryptographic Storage** | ✅ **VERIFIED** | Phone numbers hashed (SHA-256); embeddings and messages Fernet AES encrypted |
-| 12 | **REST / WebSocket APIs** | ✅ **VERIFIED** | ~23 REST endpoints + `/api/stream/ws` streaming WebSocket |
-| 13 | **Near-Real-Time Latency** | ✅ **VERIFIED** | Coalesced 2.0s sliding graph evaluation delivering sub-second response ($< 850\text{ms}$) |
-| 14 | **Multilingual / Hinglish Support** | ✅ **VERIFIED** | Benchmark documented across Hindi, Hinglish, and Indian English with >90% F1 |
-| 15 | **Victim-Side Call Interception** | ✅ **VERIFIED** | Unilateral device-level protection without requiring scammer participation |
-
-</details>
-
----
-
-<details>
-<summary><b>📁 Deep Dive 6: Complete Multi-Platform Codebase Map</b></summary>
+<summary><b>📁 Deep Dive 5: Complete Multi-Platform Codebase Map</b></summary>
 
 <br/>
 
 ```
-antAI-Guardian/
+CallShield/
 ├── 📱 app/                                    # Android Native Client (Kotlin 2.0, Jetpack Compose)
-│   ├── app/src/main/java/com/antai/client/
+│   ├── app/src/main/java/com/codewithkael/simplecall/
 │   │   ├── di/                               # Dagger Hilt dependency injection
 │   │   ├── remote/                           # WebRTC engine, AiTapEngine, WebSocket stream client
 │   │   ├── sms/                              # SmsReceiver broadcast interceptor
-│   │   ├── notifications/                    # AntaiNotificationListenerService & NotificationManager
+│   │   ├── notifications/                    # NotificationListenerService & RiskNotificationManager
+│   │   ├── shield/                           # On-device background mic listener & floating overlay
 │   │   └── ui/
 │   │       ├── components/                   # AiInsightWindow, CallerVerifyBar, DeepfakeAlertDialog
-│   │       └── screens/                      # Calls, Messages, Guard, Incidents, Settings
+│   │       └── screens/                      # MainScreen, Messages, NotificationGuard, Voiceprints, Settings
 │   └── build.gradle.kts                      # AGP 8.7.3, Kotlin 2.0.0, Compose BOM
 ├── 🌐 web/                                    # Next.js 14+ Tactical SOC Operations Console
 │   ├── src/app/                              # App Router (/, /features, /how-it-works, /demo, /dashboard-live, /dataflow)
 │   ├── src/components/dashboard/             # RiskGauge, FreezeBanner, SignalBar, Sparkline, VerdictCard
 │   ├── src/components/dataflow/              # PipelineGraphSvg, NodeDetailsPanel, TraceScamAnimation
-│   ├── src/content/content.ts                # Single source of truth for specifications & copy
-│   ├── src/lib/useStreamWs.ts                # WebSocket live client with graceful offline fallback
 │   └── tailwind.config.ts                    # Hardened cybersecurity SOC design tokens
 ├── 💻 windows_client/                         # Windows Desktop Companion (Python 3.10+, Tkinter)
 │   ├── audio_capture.py                      # 16kHz float32 PCM mic/stereo-mix capture via sounddevice
@@ -516,6 +487,8 @@ antAI-Guardian/
 │       └── storage/                          # SQLite DB with Fernet AES symmetric encryption
 ├── 🔌 SimpleVideoCallBackend/                 # Node.js WebRTC signaling relay (Port 3007)
 ├── 🌐 SimpleVideoCallReacJs/                  # React 18 + Vite WebRTC test client
+├── ⚡ worker/                                  # Cloudflare Edge API Worker & WebSocket relay
+├── 🧩 extension/                               # Chrome MV3 DOM text mutation scanner & phishing HUD
 ├── 🖼️ assets/                                 # Animated SVG architecture DAG, terminal card & screenshots
 └── 📚 docs/                                   # Architecture blueprints, setup manuals & benchmarks
 ```
@@ -535,10 +508,9 @@ antAI-Guardian/
 
 <div align="center">
 
-### 🛡️ antAI Guardian — Built for Smart India Hackathon 2026 (PS26104)
-*Protecting vulnerable families from synthetic voice clones and high-pressure fraud.*
+### 🛡️ CallShield
+*Safer conversations, a brighter tomorrow.*
 
 ⭐ **Star this repository to support open, accessible AI fraud defense!**
 
 </div>
-
