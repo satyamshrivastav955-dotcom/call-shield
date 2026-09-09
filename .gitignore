@@ -20,6 +20,7 @@ hs_err_pid*.log
 *.zip
 *.tar.gz
 /*.png
+app/*.png
 /add-quatarly-models.ps1
 /b.sh
 
