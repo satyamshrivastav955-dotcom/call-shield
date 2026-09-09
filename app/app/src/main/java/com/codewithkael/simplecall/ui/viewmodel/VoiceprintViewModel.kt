@@ -46,9 +46,10 @@ data class AddMemberFlow(
 )
 
 val ENROLL_PHRASES = listOf(
-    "This is my real voice. I am registering it with antAI so my family is protected.",
-    "Never transfer funds or share verification OTPs based on an unexpected call.",
-    "If someone clones my voice, antAI can cross-check against this registered print."
+    "My voice is my password. Verify me with CallShield.",
+    "This is my real voice. I am registering it with CallShield so my family is protected.",
+    "I confirm this is my personal voiceprint for fraud prevention.",
+    "If someone clones my voice, CallShield can cross-check against this registered print."
 )
 
 @HiltViewModel
@@ -269,7 +270,7 @@ class VoiceprintViewModel @Inject constructor(
                 .onFailure {
                     _ui.value = _ui.value.copy(
                         uploading = false,
-                        message = "Couldn't reach the antAI server to save sample.",
+                        message = "Couldn't reach the CallShield server to save sample.",
                         messageIsError = true,
                         serverUnreachable = true
                     )
@@ -315,7 +316,7 @@ class VoiceprintViewModel @Inject constructor(
                     .filter { it.voiceprint != null }
                     .map { com.codewithkael.simplecall.ai.LabeledVoiceprint(
                         it.displayName, it.phoneHash, it.voiceprint!!) }
-                pipeline.selectContact(hash)
+                pipeline.selectContact(null)
             } catch (_: Exception) {}
             _ui.value = _ui.value.copy(
                 uploading = false,

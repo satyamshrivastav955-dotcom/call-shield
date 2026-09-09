@@ -37,7 +37,7 @@ class SettingsViewModel @Inject constructor(
 
     private val prefs = application.getSharedPreferences(PREFS_SETTINGS, Context.MODE_PRIVATE)
 
-    private val _scenario = mutableStateOf(prefs.getString(KEY_SCENARIO, "high_value_txn") ?: "high_value_txn")
+    private val _scenario = mutableStateOf(prefs.getString(KEY_SCENARIO, "routine_call") ?: "routine_call")
     val scenario: State<String> = _scenario
 
     private val _sensitivity = mutableStateOf(prefs.getString(KEY_SENSITIVITY, "standard") ?: "standard")

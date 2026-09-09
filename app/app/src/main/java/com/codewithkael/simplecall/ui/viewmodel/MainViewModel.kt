@@ -63,6 +63,7 @@ import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
 import org.webrtc.SessionDescription
 import org.webrtc.SurfaceViewRenderer
+import com.codewithkael.simplecall.notifications.AlertFeedback
 import com.codewithkael.simplecall.notifications.RiskNotificationManager
 import javax.inject.Inject
 
@@ -82,6 +83,7 @@ class MainViewModel @Inject constructor(
     // button-initiated verify.result to. Nothing in the call path uses it.
     private val messagesRepo: MessagesRepository,
     private val riskNotificationManager: RiskNotificationManager,
+    private val alertFeedback: AlertFeedback,
     application: Application
 ) : ViewModel() {
 
@@ -510,7 +512,7 @@ class MainViewModel @Inject constructor(
             override fun onError(e: Exception?) {
                 viewModelScope.launch {
                     eventState.emit(
-                        "antAI offline at ${serverHost.value}:${Constants.ANTAI_PORT} — " +
+                        "CallShield offline at ${serverHost.value}:${Constants.ANTAI_PORT} — " +
                             "call continues without AI protection"
                     )
                 }
@@ -532,6 +534,7 @@ class MainViewModel @Inject constructor(
 
             override fun onVerdict(band: String, risk: Double, verdict: String,
                                    why: String, action: String) {
+                alertFeedback.onVerdict(band)
                 val cur = aiInsightState.value
                 // copy(), not a fresh AiInsight(): building a new object here threw
                 // away every detector value from the last signals.update, so the
@@ -552,6 +555,7 @@ class MainViewModel @Inject constructor(
             }
 
             override fun onSignals(signals: AiSignals) {
+                alertFeedback.onVerdict(signals.band)
                 // P1.7: Post a status-bar notification if risk crosses the verify
                 // threshold while the user is backgrounded.
                 riskNotificationManager.onRiskUpdate(
@@ -584,22 +588,24 @@ class MainViewModel @Inject constructor(
             }
 
             override fun onDeepfakeAlert(alert: DeepfakeAlert) {
+                alertFeedback.onVerdict("critical")
                 pauseForDeepfakeAlert(alert)
             }
 
             override fun onFreeze(requestType: String, message: String, reason: String) {
+                alertFeedback.onVerdict("critical")
                 val cur = aiInsightState.value
                 val text = message.ifBlank { reason }
                 aiInsightState.value = (cur ?: AiInsight()).copy(
                     band = "critical",
                     guidance = if (text.isBlank()) "Request held: $requestType" else text
                 )
-                viewModelScope.launch { eventState.emit("antAI froze a $requestType request") }
+                viewModelScope.launch { eventState.emit("CallShield froze a $requestType request") }
             }
 
             override fun onVerifyPrompt(raw: String) {
                 viewModelScope.launch {
-                    eventState.emit("antAI suggests verifying this caller with a trusted contact")
+                    eventState.emit("CallShield suggests verifying this caller with a trusted contact")
                 }
             }
 
@@ -612,7 +618,7 @@ class MainViewModel @Inject constructor(
             }
 
             override fun onReportReady(title: String) {
-                viewModelScope.launch { eventState.emit("antAI report ready: $title") }
+                viewModelScope.launch { eventState.emit("CallShield report ready: $title") }
             }
         })
         antaiClient = client
@@ -841,6 +847,9 @@ class MainViewModel @Inject constructor(
     fun onSurfaceRemoteReady(remoteRenderer: SurfaceViewRenderer) {
         this.remoteSurface = remoteRenderer
         webrtcFactory.initSurfaceView(remoteRenderer)
+        runCatching {
+            remoteMediaStream?.videoTracks?.firstOrNull()?.addSink(remoteRenderer)
+        }
     }
 
     fun switchCamera() {
@@ -854,6 +863,7 @@ class MainViewModel @Inject constructor(
 
     private fun finishCall(){
         stopAiTap()
+        alertFeedback.reset()
         // P1.7: dismiss any lingering risk alert when the call ends
         riskNotificationManager.dismissRiskNotification()
         deepfakeAutoHangupState.value = null

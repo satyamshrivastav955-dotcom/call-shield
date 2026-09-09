@@ -170,7 +170,7 @@ fun SettingsScreen(
 
             // ── Info footer ───────────────────────────────────────────────────
             Text(
-                text = "antAI never stores raw audio. Voice deepfake detection uses short rolling " +
+                text = "CallShield never stores raw audio. Voice deepfake detection uses short rolling " +
                        "windows of speech derived values only. All ML inference runs on the server " +
                        "you configured, not on a third-party cloud.",
                 fontSize = 11.sp,

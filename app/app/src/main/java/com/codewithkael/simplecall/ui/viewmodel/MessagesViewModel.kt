@@ -111,8 +111,8 @@ class MessagesViewModel @Inject constructor(
                         // is server-blocked.
                         _login.value = _login.value.copy(
                             loading = false,
-                            error = "Phone verification needs the antAI server — check the IP on the Calls tab. " +
-                                "SMS scam scanning below still works on-device without sign-in."
+                            error = "Phone verification needs the CallShield server — check the IP on the Calls tab. " +
+                                "(SMS scanning continues to work on-device without sign-in.)"
                         )
                     }
                 }

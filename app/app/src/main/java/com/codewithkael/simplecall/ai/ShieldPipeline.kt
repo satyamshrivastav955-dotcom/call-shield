@@ -258,13 +258,11 @@ class ShieldPipeline @Inject constructor(private val models: ModelManager) {
                     simName = bestVp.name
                     mismatch = false
                 }
-            } else {
-                // Legacy single-print path (enrolled directly, no labeled list).
+            } else if (selected != null && enrolledVoiceprint != null) {
+                // Legacy single-print path (enrolled directly, no labeled list) with active selection.
                 enrolledVoiceprint?.let { vp ->
                     speaker.verify(w, vp)?.let {
                         sim = it.first
-                        // Single-print: someone enrolled this print intending to
-                        // verify against it, treat as a claimed identity.
                         claimed = true
                         val floor = if ((spoofProb ?: 0f) < 0.5f) REPLAY_SIM_FLOOR else SpeakerEngine.SIM_THRESHOLD
                         when (classifyIdentity(it.first, floor)) {
@@ -359,6 +357,8 @@ class ShieldPipeline @Inject constructor(private val models: ModelManager) {
         recentTranscript = ""
         fullTranscript = ""
         sessionScamMemory = 0f
+        selectedPhoneHash = null
+        enrolledVoiceprint = null
         _results.value = null
     }
 

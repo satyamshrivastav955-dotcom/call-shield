@@ -443,11 +443,17 @@ class MessagesRepository @Inject constructor(
                         it.body == r.body && it.outgoing == !r.incoming
                 }
                 if (!dup) {
+                    val ls = if (r.incoming) localScore(r.body) else null
                     list.add(
                         ChatMessage(
                             id = "sms-hist-${localSeq.incrementAndGet()}",
                             peerPhone = key, body = r.body, timestamp = r.date,
                             outgoing = !r.incoming, channel = MessageChannel.SMS,
+                            riskScore = ls?.risk ?: 0.0,
+                            verdict = ls?.verdict,
+                            why = ls?.why,
+                            scamType = ls?.scamType,
+                            onDevice = ls?.verdict != null,
                             analysisPending = false
                         )
                     )

@@ -89,10 +89,11 @@ fun HomeScreen() {
         }
     }
 
-    // ----- SMS / notification permission onboarding (messaging only) -----
-    // No login requirement: SMS + on-device scanning work for anyone (Phase 4.2).
-    val smsPermissions = remember {
+    // ----- Permission onboarding (Calls, Messages, Guard) -----
+    val startupPermissions = remember {
         buildList {
+            add(Manifest.permission.CAMERA)
+            add(Manifest.permission.RECORD_AUDIO)
             add(Manifest.permission.READ_SMS)
             add(Manifest.permission.RECEIVE_SMS)
             add(Manifest.permission.SEND_SMS)
@@ -104,16 +105,18 @@ fun HomeScreen() {
     ) { result ->
         if (result[Manifest.permission.READ_SMS] == true) messagesVm.onSmsPermissionGranted()
     }
-    var askedSms by rememberSaveable { mutableStateOf(false) }
+    var askedStartupPerms by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(tab) {
-        val messaging = tab == HomeTab.MESSAGES || tab == HomeTab.GUARD
-        if (messaging && !askedSms) {
-            val granted = ContextCompat.checkSelfPermission(
-                context, Manifest.permission.READ_SMS
-            ) == PackageManager.PERMISSION_GRANTED
-            if (granted) messagesVm.onSmsPermissionGranted() else permLauncher.launch(smsPermissions)
-            askedSms = true
+    LaunchedEffect(Unit) {
+        if (!askedStartupPerms) {
+            val hasCamera = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            val hasAudio = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+            val hasSms = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
+            if (hasSms) messagesVm.onSmsPermissionGranted()
+            if (!hasCamera || !hasAudio || !hasSms) {
+                permLauncher.launch(startupPermissions)
+            }
+            askedStartupPerms = true
         }
     }
 

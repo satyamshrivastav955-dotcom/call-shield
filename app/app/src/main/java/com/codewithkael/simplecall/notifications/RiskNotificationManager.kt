@@ -34,7 +34,7 @@ class RiskNotificationManager @Inject constructor(
 
     companion object {
         const val CHANNEL_ID = "antai_risk_alerts"
-        const val CHANNEL_NAME = "antAI Risk Alerts"
+        const val CHANNEL_NAME = "CallShield Risk Alerts"
         const val CHANNEL_DESC =
             "Alerts when a live call crosses the risk verification threshold"
 

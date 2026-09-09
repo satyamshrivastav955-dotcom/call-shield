@@ -68,10 +68,17 @@ class WebRTCFactory @Inject constructor(
     }
 
 
+    private var activePeerConnection: PeerConnection? = null
+
     fun prepareLocalStream(localRenderer: SurfaceViewRenderer) {
         withVideo = true
         initSurfaceView(localRenderer)
         startLocalMedia(localRenderer)
+        localStream?.let { stream ->
+            activePeerConnection?.let { pc ->
+                runCatching { pc.addStream(stream) }
+            }
+        }
     }
 
     /** Voice-only call: mic only, no camera. Safe to call multiple times. */
@@ -79,14 +86,23 @@ class WebRTCFactory @Inject constructor(
         withVideo = false
         if (localAudioTrack != null) return
         startLocalMedia(null)
+        localStream?.let { stream ->
+            activePeerConnection?.let { pc ->
+                runCatching { pc.addStream(stream) }
+            }
+        }
     }
 
     private fun startLocalMedia(surface: SurfaceViewRenderer?) {
-        localAudioTrack =
-            peerConnectionFactory.createAudioTrack(streamId + "_audio", localAudioSource)
-        localStream = peerConnectionFactory.createLocalMediaStream(streamId)
-        localStream?.addTrack(localAudioTrack)
-        if (withVideo && surface != null) {
+        if (localAudioTrack == null) {
+            localAudioTrack =
+                peerConnectionFactory.createAudioTrack(streamId + "_audio", localAudioSource)
+        }
+        if (localStream == null) {
+            localStream = peerConnectionFactory.createLocalMediaStream(streamId)
+            localStream?.addTrack(localAudioTrack)
+        }
+        if (withVideo && surface != null && localVideoTrack == null) {
             val surfaceTextureHelper =
                 SurfaceTextureHelper.create(Thread.currentThread().name, eglBaseContext)
             videoCapture = getVideoCapture()
@@ -107,7 +123,9 @@ class WebRTCFactory @Inject constructor(
                 isFrontFacing(it)
             }?.let {
                 createCapturer(it, null)
-            } ?: throw IllegalStateException()
+            } ?: deviceNames.firstOrNull()?.let {
+                createCapturer(it, null)
+            } ?: throw IllegalStateException("No camera available")
         }
     }
 
@@ -151,6 +169,7 @@ class WebRTCFactory @Inject constructor(
         localAudioTrack = null
         localVideoTrack = null
         localStream = null
+        activePeerConnection = null
     }
 
     fun switchCamera(){
@@ -172,6 +191,7 @@ class WebRTCFactory @Inject constructor(
         val connection = peerConnectionFactory.createPeerConnection(
             PeerConnection.RTCConfiguration(iceServer),observer
         )
+        activePeerConnection = connection
         localStream?.let {
             connection?.addStream(it)
         }
