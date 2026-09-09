@@ -163,8 +163,14 @@ class AudioIngestor:
     async def flush(self, pid: int | None = None) -> None:
         pids = [pid] if pid is not None else list(self._seg.keys())
         for p in pids:
+            buf = self._buf.get(p)
+            if buf is not None and len(buf) > 0:
+                pad = np.zeros(max(0, self._win - len(buf)), dtype=np.float32)
+                chunk = np.concatenate([buf, pad])[:self._win]
+                self._buf[p] = np.zeros(0, dtype=np.float32)
+                await self._process_window(p, chunk)
             seg = self._seg.get(p)
-            if seg is not None and len(seg) / self.sr >= self._min_seg_s:
+            if seg is not None and len(seg) > 0:
                 await self._emit(p, seg, self._seg_start.get(p, time.time()))
             self._seg[p] = np.zeros(0, dtype=np.float32)
             self._in_speech[p] = False

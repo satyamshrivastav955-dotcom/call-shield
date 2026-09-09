@@ -22,6 +22,7 @@ Every field can be ``None``: a model that did not run or has no weights reports
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from typing import Callable, Optional
@@ -216,6 +217,8 @@ class StreamingSession:
 
     async def finish(self) -> dict:
         await self.flush()
+        # Drain pending ASR segments and evaluation runs
+        await self.runner.wait_idle(timeout=30.0)
         snap = self.snapshot()
         try:
             await self.runner.finish()

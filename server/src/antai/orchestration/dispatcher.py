@@ -455,75 +455,79 @@ class SessionRunner:
         asr = hub.get("asr")
         while True:
             speaker_id, audio, sample_rate = await self._asr_queue.get()
-            text = ""
+            self._asr_busy = True
             try:
-                if asr and asr.ready():
-                    cfg = get_config()
-                    # Reuse the session's locked language (or an operator-pinned
-                    # config value) so the transcript can't flip languages between
-                    # segments. Falls back to auto-detect (None) only until the
-                    # first confident detection.
-                    lang = self._locked_lang or cfg.pipeline.asr_language
-                    r = await asyncio.to_thread(asr.transcribe, audio,
-                                                sample_rate, language=lang)
-                    text = r.get("text", "")
-                    # Lock the language on the first non-empty transcription
-                    # (unless the operator already pinned one in config).
-                    if self._locked_lang is None and not cfg.pipeline.asr_language:
-                        detected = r.get("language")
-                        if detected and text.strip():
-                            self._locked_lang = detected
-                            log.info("ASR language locked to '%s' (session=%s)",
-                                     detected, self.session_key)
-            except Exception:
-                self._asr_failures += 1
-                log.exception(
-                    "ASR failed on segment %d of session %s — this line is missing "
-                    "from the transcript, but the audio still goes to the "
-                    "synthetic-voice detectors", self._asr_failures, self.session_key)
-            try:
-                entry = {"speaker": self.participant_names.get(speaker_id)
-                         or ("caller" if speaker_id == self.caller_id else "callee"),
-                         "speaker_id": speaker_id, "text": text,
-                         "t": time.strftime("%H:%M:%S")}
-                if text:
-                    self.transcript.append(entry)
-                    self.events.append({"t": entry["t"],
-                                        "what": f"{entry['speaker']} spoke"})
-                    rt = get_rt_hub()
-                    for uid in self._push_targets():
-                        await rt.send(uid, "transcript.update", {
-                            "session_key": self.session_key,
-                            "speaker": entry["speaker"], "text": entry["text"],
-                            "t": entry["t"]})
-                state = self._base_state()
-                state["pending_audio"] = {"speaker_id": speaker_id, "audio": audio,
-                                          "sample_rate": sample_rate}
-                # Separate, longer clip for the synthetic-voice / speaker-verify
-                # models (see detector_window). pending_audio stays the raw
-                # segment because lip-sync correlates it against the video frames
-                # of that same moment.
-                win, win_sr = self.detector_window(speaker_id)
-                if win is not None and len(win):
-                    state["detector_audio"] = {"speaker_id": speaker_id,
-                                               "audio": win,
-                                               "sample_rate": win_sr}
-                # Long unpadded context for the AST head (see
-                # voice_long_window_s): padded short windows read as spoof.
+                text = ""
                 try:
-                    long_s = float(get_config().pipeline.voice_long_window_s)
+                    if asr and asr.ready():
+                        cfg = get_config()
+                        # Reuse the session's locked language (or an operator-pinned
+                        # config value) so the transcript can't flip languages between
+                        # segments. Falls back to auto-detect (None) only until the
+                        # first confident detection.
+                        lang = self._locked_lang or cfg.pipeline.asr_language
+                        r = await asyncio.to_thread(asr.transcribe, audio,
+                                                    sample_rate, language=lang)
+                        text = r.get("text", "")
+                        # Lock the language on the first non-empty transcription
+                        # (unless the operator already pinned one in config).
+                        if self._locked_lang is None and not cfg.pipeline.asr_language:
+                            detected = r.get("language")
+                            if detected and text.strip():
+                                self._locked_lang = detected
+                                log.info("ASR language locked to '%s' (session=%s)",
+                                         detected, self.session_key)
                 except Exception:
-                    long_s = 10.0
-                win_long, _ = self.detector_window(speaker_id, seconds=long_s)
-                if win_long is not None and len(win_long):
-                    state["detector_audio_long"] = {
-                        "speaker_id": speaker_id, "audio": win_long,
-                        "sample_rate": win_sr}
-                self._audio_segments += 1
-                state["claimed_identity_id"] = self._detect_identity_claim(text)
-                self._schedule_evaluate(state)
-            except Exception:
-                log.exception("ASR worker error")
+                    self._asr_failures += 1
+                    log.exception(
+                        "ASR failed on segment %d of session %s — this line is missing "
+                        "from the transcript, but the audio still goes to the "
+                        "synthetic-voice detectors", self._asr_failures, self.session_key)
+                try:
+                    entry = {"speaker": self.participant_names.get(speaker_id)
+                             or ("caller" if speaker_id == self.caller_id else "callee"),
+                             "speaker_id": speaker_id, "text": text,
+                             "t": time.strftime("%H:%M:%S")}
+                    if text:
+                        self.transcript.append(entry)
+                        self.events.append({"t": entry["t"],
+                                            "what": f"{entry['speaker']} spoke"})
+                        rt = get_rt_hub()
+                        for uid in self._push_targets():
+                            await rt.send(uid, "transcript.update", {
+                                "session_key": self.session_key,
+                                "speaker": entry["speaker"], "text": entry["text"],
+                                "t": entry["t"]})
+                    state = self._base_state()
+                    state["pending_audio"] = {"speaker_id": speaker_id, "audio": audio,
+                                              "sample_rate": sample_rate}
+                    # Separate, longer clip for the synthetic-voice / speaker-verify
+                    # models (see detector_window). pending_audio stays the raw
+                    # segment because lip-sync correlates it against the video frames
+                    # of that same moment.
+                    win, win_sr = self.detector_window(speaker_id)
+                    if win is not None and len(win):
+                        state["detector_audio"] = {"speaker_id": speaker_id,
+                                                   "audio": win,
+                                                   "sample_rate": win_sr}
+                    # Long unpadded context for the AST head (see
+                    # voice_long_window_s): padded short windows read as spoof.
+                    try:
+                        long_s = float(get_config().pipeline.voice_long_window_s)
+                    except Exception:
+                        long_s = 10.0
+                    win_long, _ = self.detector_window(speaker_id, seconds=long_s)
+                    if win_long is not None and len(win_long):
+                        state["detector_audio_long"] = {
+                            "speaker_id": speaker_id, "audio": win_long,
+                            "sample_rate": win_sr}
+                    self._audio_segments += 1
+                    state["claimed_identity_id"] = self._detect_identity_claim(text)
+                    self._schedule_evaluate(state)
+                except Exception:
+                    log.exception("ASR worker error")
+            finally:
+                self._asr_busy = False
 
     # ------------------------------------------------------------ video
     async def on_video_frame(self, speaker_id: int, frame, meta):
@@ -663,16 +667,44 @@ class SessionRunner:
             if self._pending_state is not None:
                 self._schedule_evaluate(self._pending_state)
 
+    async def wait_idle(self, timeout: float = 30.0):
+        """Wait until any in-flight ASR and evaluation completely finishes."""
+        t0 = time.time()
+        while time.time() - t0 < timeout:
+            busy = (
+                not self._asr_queue.empty()
+                or getattr(self, "_asr_busy", False)
+                or self._eval_pending
+                or getattr(self, "_eval_busy", False)
+                or self._pending_state is not None
+            )
+            if not busy and self._audio_segments > 0:
+                await asyncio.sleep(0.08)
+                busy = (
+                    not self._asr_queue.empty()
+                    or getattr(self, "_asr_busy", False)
+                    or self._eval_pending
+                    or getattr(self, "_eval_busy", False)
+                    or self._pending_state is not None
+                )
+                if not busy:
+                    break
+            await asyncio.sleep(0.05)
+
     async def _evaluate_locked(self, state: AnalysisState):
-        out = await _run_graph(state)
-        self._persist_last_signals(out)
-        new_risk = out.get("risk", 0.0)
-        new_band = out.get("band", "passive")
-        self.signals = _signals(out)
-        self.risk = new_risk
-        self.risk_peak = max(self.risk_peak, new_risk)
-        self.band = new_band
-        decision = out.get("decision", "log")
+        self._eval_busy = True
+        try:
+            out = await _run_graph(state)
+            self._persist_last_signals(out)
+            new_risk = out.get("risk", 0.0)
+            new_band = out.get("band", "passive")
+            self.signals = _signals(out)
+            self.risk = new_risk
+            self.risk_peak = max(self.risk_peak, new_risk)
+            self.band = new_band
+            decision = out.get("decision", "log")
+        finally:
+            self._eval_busy = False
 
         # Per-chunk certification log (Task 8): ONE unconditional line per graph
         # evaluation, so a two-device live call produces a readable, grep-able
