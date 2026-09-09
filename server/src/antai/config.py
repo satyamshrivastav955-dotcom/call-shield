@@ -149,11 +149,27 @@ class ProvidersConfig:
     groq_model: str = "openai/gpt-oss-120b"
     groq_endpoint: str = "https://api.groq.com/openai/v1/chat/completions"
 
+    # Gemini (Google) — LLM fallback #2
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
+    gemini_endpoint: str = "https://generativelanguage.googleapis.com/v1beta/models"
+
+    # OpenRouter — LLM fallback #3
+    openrouter_api_key: str = ""
+    openrouter_model: str = "openai/gpt-oss-120b"
+    openrouter_endpoint: str = "https://openrouter.ai/api/v1/chat/completions"
+
+    # Order in which LlmEngine tries backends
+    llm_fallback_chain: list[str] = field(
+        default_factory=lambda: ["groq", "gemini", "openrouter", "local"])
+
     @classmethod
     def from_dict(cls, d: dict) -> "ProvidersConfig":
         dg = d.get("deepgram", {}) or {}
         ve = d.get("velma", {}) or {}
         gq = d.get("groq", {}) or {}
+        ge = d.get("gemini", {}) or {}
+        orr = d.get("openrouter", {}) or {}
         # env var wins for keys; config supplies models/endpoints (never keys)
         return cls(
             asr=d.get("asr", "faster_whisper"),
@@ -174,6 +190,16 @@ class ProvidersConfig:
             groq_api_key=os.environ.get("GROQ_API_KEY", ""),
             groq_model=gq.get("model", "openai/gpt-oss-120b"),
             groq_endpoint=gq.get("endpoint", "https://api.groq.com/openai/v1/chat/completions"),
+            gemini_api_key=os.environ.get("GEMINI_API_KEY", ""),
+            gemini_model=ge.get("model", "gemini-2.0-flash"),
+            gemini_endpoint=ge.get("endpoint",
+                                   "https://generativelanguage.googleapis.com/v1beta/models"),
+            openrouter_api_key=os.environ.get("OPENROUTER_API_KEY", ""),
+            openrouter_model=orr.get("model", "openai/gpt-oss-120b"),
+            openrouter_endpoint=orr.get("endpoint",
+                                        "https://openrouter.ai/api/v1/chat/completions"),
+            llm_fallback_chain=d.get("llm_fallback_chain",
+                                     ["groq", "gemini", "openrouter", "local"]),
         )
 
 
