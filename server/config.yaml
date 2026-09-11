@@ -42,7 +42,7 @@ models:
 # other detectors are unchanged (still local). API KEYS live in server/.env
 # (gitignored) — never in this file.
 providers:
-  asr: deepgram              # deepgram | faster_whisper
+  asr: faster_whisper        # deepgram | faster_whisper
   voice_deepfake: both       # both | velma | local
   llm: groq                  # groq | local
   deepgram:

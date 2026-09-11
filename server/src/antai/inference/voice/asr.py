@@ -28,7 +28,9 @@ class AsrEngine(BaseEngine):
 
     def _load(self) -> bool:
         if get_config().providers.asr == "deepgram":
-            return self._load_deepgram()
+            if self._load_deepgram():
+                return True
+            log.warning("Deepgram not available (%s); falling back to local faster-whisper", self._unavailable_reason)
         return self._load_faster_whisper()
 
     # --------------------------------------------------------- Deepgram (API)
@@ -61,13 +63,12 @@ class AsrEngine(BaseEngine):
         cfg = get_config()
         root = cfg.models.root
         model_dir = Path(root) / "asr"
-        if not model_dir.exists():
-            return False
+        model_spec = str(model_dir) if (model_dir / "model.bin").exists() else "tiny"
         # ASR runs on CPU int8: robust, keeps real-time budget for 1-4s chunks.
         device = "cpu"
         compute = "int8"
         try:
-            self.model = WhisperModel(str(model_dir), device=device, compute_type=compute)
+            self.model = WhisperModel(model_spec, device=device, compute_type=compute)
             self._backend = "faster_whisper"
             self.device = device
             return True

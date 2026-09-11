@@ -76,8 +76,10 @@ npx wrangler login
 npx wrangler deploy
 ```
 
-Once deployed, Cloudflare will output your public Worker URL:
-`https://antai-signaling-server.<your-subdomain>.workers.dev`
+Once deployed, Cloudflare will output your public Worker URL.
+
+**Live Deployed URL:**
+`https://antai-signaling-server.siddeshshirote30052006.workers.dev`
 
 ---
 
@@ -159,9 +161,13 @@ npm run dev
 
 ### Chrome Extension (`extension/`)
 1. Open Chrome Extension Options.
-2. Under **Server Host**, enter:
-   `<unique-name>.trycloudflare.com`
-3. Click Save.
+2. Under **Server Host**, enter (paste the active tunnel URL, no leading scheme):
+   `blend-switching-lbs-concentration.trycloudflare.com`
+   *(The extension auto-detects remote Cloudflare domains and uses HTTPS/WSS automatically.)*
+3. Click **Save Settings** → reload the extension at `chrome://extensions`.
+
+> **Note:** The Cloudflare Quick Tunnel URL changes each time the tunnel is restarted.
+> When you restart `server/scripts/start_tunnel.ps1`, update this field with the new URL shown in the terminal.
 
 ---
 

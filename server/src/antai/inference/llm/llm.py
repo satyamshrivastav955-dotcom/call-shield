@@ -26,7 +26,9 @@ class LlmEngine(BaseEngine):
 
     def _load(self) -> bool:
         if get_config().providers.llm == "groq":
-            return self._load_groq()
+            if self._load_groq():
+                return True
+            log.warning("Groq not available (%s); falling back to local GGUF", self._unavailable_reason)
         return self._load_local()
 
     # -------------------------------------------------------------- Groq (API)

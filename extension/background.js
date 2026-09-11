@@ -43,10 +43,12 @@ async function getConfig() {
 // REST base for a host that may carry wss:// (TLS-proxied) — keeps scheme.
 function httpBase(host) {
   const raw = String(host || "").trim();
-  const secure = /^wss:\/\//.test(raw) || /^https:\/\//.test(raw);
-  const h = raw.replace(/^wss?:\/\//, "").replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  const isLocal = raw.includes("localhost") || raw.includes("127.0.0.1");
+  const secure = /^wss:\/\//.test(raw) || /^https:\/\//.test(raw) || !isLocal;
+  const h = raw.replace(/^https?:\/\//, "").replace(/^wss?:\/\//, "").replace(/\/+$/, "");
   return `${secure ? "https" : "http"}://${h}`;
 }
+
 
 // ── Incidents ring buffer (up to 50 items) ────────────────────────────────────
 async function getIncidents() {

@@ -86,8 +86,17 @@ class VideoDeepfakeEngine(BaseEngine):
         # everything and are dropped by the <0.65 reliability gate below, leaving
         # the discrimative ViT as the signal.
         model_votes = {k: v for k, v in votes.items() if k != "temporal"}
+        if not model_votes:
+            fake = _heuristic_score(frames_bgr)
+            threshold = int(getattr(self, "_vote_threshold", None) or
+                            get_config().pipeline.video_vote_threshold)
+            return {"fake_prob": fake, "temporal_consistency": temporal,
+                    "votes": {k: round(v, 3) for k, v in votes.items()},
+                    "flagged_signals": [], "agreement": 0,
+                    "vote_threshold": threshold, "flagged": False,
+                    "heuristic": True, "ready": True}
         reliable = {k: v for k, v in model_votes.items() if v < 0.65}
-        usable = reliable if reliable else (model_votes if model_votes else votes)
+        usable = reliable if reliable else model_votes
         flags = {k: v > 0.5 for k, v in usable.items()}
         agreeing = [k for k, v in flags.items() if v]
         agreement = len(agreeing)

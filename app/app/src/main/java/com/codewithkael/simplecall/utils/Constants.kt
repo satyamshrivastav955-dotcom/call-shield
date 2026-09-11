@@ -6,16 +6,15 @@ object Constants {
     // Port the SimpleVideoCallBackend (Node.js signaling server) listens on.
     const val SIGNALING_PORT = 3007
 
-    // Default signaling server host = the LAN IPv4 of the laptop running the Node
-    // backend. Find it on Windows with `ipconfig` (the IPv4 of your Wi-Fi adapter,
-    // e.g. 192.168.1.23). You can also change this at runtime on the app's home
-    // screen (it is saved on the device), so you never need to rebuild just because
-    // the laptop's IP changed. This default is only the pre-filled value.
-    // Default signaling server host = Cloudflare Worker
-    const val DEFAULT_SERVER_HOST = "antai-signaling-server.opaque-preface.workers.dev"
+    // WebRTC signaling server — Cloudflare Workers (Durable Objects, global edge).
+    // Deployed via `npx wrangler deploy` in SimpleVideoCallBackend/.
+    // Change at runtime in the app's home screen; this is only the pre-filled default.
+    const val DEFAULT_SERVER_HOST = "antai-signaling-server.siddeshshirote30052006.workers.dev"
 
-    // Default antAI AI detection server host = Cloudflare Worker
-    const val DEFAULT_ANTAI_HOST = "antai-edge-api.hardly-rumba.workers.dev"
+    // antAI AI/ML detection server — Cloudflare Tunnel (cloudflared quick tunnel).
+    // Run server/scripts/start_tunnel.ps1 to start; URL rotates on each restart.
+    // Update this constant or set from the app settings screen after each tunnel restart.
+    const val DEFAULT_ANTAI_HOST = "blend-switching-lbs-concentration.trycloudflare.com"
 
     // Port the antAI Python server (FastAPI: LangGraph pipeline + local LLM)
     // listens on. It runs on the SAME laptop as the Node signaling server, so

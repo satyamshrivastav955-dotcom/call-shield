@@ -34,11 +34,14 @@ function computeRms(buffer) {
 // by the server when present.
 function wsUrl(host, token) {
   const raw = String(host || "").trim();
-  const scheme = /^wss:\/\//.test(raw) ? "wss" : "ws";
-  const h = raw.replace(/^wss?:\/\//, "").replace(/\/+$/, "");
+  const isLocal = raw.includes("localhost") || raw.includes("127.0.0.1");
+  const secure = /^wss:\/\//.test(raw) || /^https:\/\//.test(raw) || !isLocal;
+  const scheme = secure ? "wss" : "ws";
+  const h = raw.replace(/^https?:\/\//, "").replace(/^wss?:\/\//, "").replace(/\/+$/, "");
   const q = token ? `?token=${encodeURIComponent(token)}` : "";
   return `${scheme}://${h}/api/stream/ws${q}`;
 }
+
 
 function report(status, error) {
   chrome.runtime.sendMessage({ type: "antai-ws-status", status, error: error || null }).catch(() => {});

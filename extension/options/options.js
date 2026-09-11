@@ -15,8 +15,9 @@ const $ = (id) => document.getElementById(id);
 
 function apiBase(host) {
   const raw = String(host || "").trim();
-  const secure = /^wss:\/\//.test(raw) || /^https:\/\//.test(raw);
-  const h = raw.replace(/^wss?:\/\//, "").replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  const isLocal = raw.includes("localhost") || raw.includes("127.0.0.1");
+  const secure = /^wss:\/\//.test(raw) || /^https:\/\//.test(raw) || !isLocal;
+  const h = raw.replace(/^https?:\/\//, "").replace(/^wss?:\/\//, "").replace(/\/+$/, "");
   return `${secure ? "https" : "http"}://${h}`;
 }
 
@@ -201,7 +202,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ── Settings ─────────────────────────────────────────────────────────────
   $("save").addEventListener("click", async () => {
-    const host = $("serverHost").value.trim().replace(/^wss?:\/\//, "").replace(/\/+$/, "");
+    const host = $("serverHost").value.trim().replace(/^https?:\/\//, "").replace(/^wss?:\/\//, "").replace(/\/+$/, "");
     const verifyAt = Math.max(1, Math.min(99, Number($("verifyAt").value) || 50));
     const criticalAt = Math.max(verifyAt + 1, Math.min(100, Number($("criticalAt").value) || 70));
     const passThroughAudio = $("passThroughAudio").checked;

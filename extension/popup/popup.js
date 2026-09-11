@@ -8,6 +8,18 @@ let currentTabId = null;
 let currentTabPlatform = null;
 let running = false;
 
+// ── Theme Switcher ────────────────────────────────────────────────────────────
+async function initTheme() {
+  const { theme } = await chrome.storage.local.get({ theme: "dark" });
+  applyTheme(theme || "dark");
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  const btn = $("theme-toggle");
+  if (btn) btn.textContent = theme === "dark" ? "🌙" : "☀️";
+}
+
 function updateAudioVisualizer(level, isLive) {
   const visualizer = $("audio-visualizer");
   if (!visualizer) return;
@@ -24,26 +36,17 @@ function updateAudioVisualizer(level, isLive) {
   }
 }
 
-function updateMeetingBanner(platform, isRunning) {
-  const banner = $("meeting-banner");
-  if (!banner) return;
-  if (!platform || !platform.isMeeting) {
-    banner.hidden = true;
-    return;
-  }
-  banner.hidden = false;
-  const iconEl = $("meeting-icon");
-  const titleEl = $("meeting-title");
-  const btnEl = $("meeting-protect-btn");
+function updatePlatformStatus(platform, isRunning) {
+  const iconEl = $("platform-icon");
+  const statusEl = $("status-line");
+  if (!iconEl || !statusEl) return;
 
-  iconEl.textContent = platform.icon || "📹";
-  if (isRunning) {
-    titleEl.textContent = `${platform.name} protected / कॉल सुरक्षित है ✓`;
-    btnEl.hidden = true;
+  if (platform && platform.isMeeting) {
+    iconEl.textContent = platform.icon || "📹";
+    statusEl.textContent = isRunning ? `${platform.name} · Active` : `${platform.name} Detected`;
   } else {
-    titleEl.textContent = `${platform.name} call detected / कॉल पहचानी गई`;
-    btnEl.hidden = false;
-    btnEl.textContent = `Protect this call / कॉल सुरक्षित करें`;
+    iconEl.textContent = "🌐";
+    statusEl.textContent = isRunning ? "Tab Protected · Active" : "Standby";
   }
 }
 
@@ -136,37 +139,36 @@ function render(state) {
   }
 
   $("rec-text").textContent =
-    nr && nr.recommendation
-      ? nr.recommendation
-      : "No analysis yet / अभी तक कोई विश्लेषण नहीं।";
+    nr && nr.recommendation ? nr.recommendation : "No active risk detected.";
 
-  // models indicator — "unavailable" when unreachable, never fake-ready
+  // models indicator — clean badge with full details in tooltip
   const m = $("models");
   if (state.models === null) {
     m.textContent = "models: unreachable";
-    m.className = "models na";
+    m.className = "models-badge na";
+    m.title = "antAI Server is unreachable";
   } else if (state.models.ready) {
     m.textContent = "models: ready";
-    m.className = "models ok";
+    m.className = "models-badge ok";
+    m.title = "All detection models loaded";
   } else {
     const down = Object.entries(state.models.detail || {})
       .filter(([, v]) => !v)
       .map(([k]) => k);
-    m.textContent = "models: unavailable" + (down.length ? ` (${down.join(", ")})` : "");
-    m.className = "models warn";
+    m.textContent = "models: standby";
+    m.className = "models-badge warn";
+    m.title = `Standby (${down.length} offline: ${down.join(", ")})`;
   }
 
-  // Meeting Detection Banner
-  updateMeetingBanner(currentTabPlatform, running);
-
-  // Audio Level Visualizer
+  // Platform Status & Audio Level Visualizer
+  updatePlatformStatus(currentTabPlatform, running);
   updateAudioVisualizer(state.audioLevel, running);
 
   // Status line + toggle
   const btn = $("toggle");
   const err = $("error");
   if (state.error) {
-    err.textContent = "⚠ " + state.error + " — check the server host in Options.";
+    err.textContent = "⚠ " + state.error;
     err.hidden = false;
   } else {
     err.hidden = true;
@@ -174,35 +176,21 @@ function render(state) {
 
   const platName = (currentTabPlatform && currentTabPlatform.name) || "this tab";
   if (running) {
-    const conn =
-      {
-        open: "live / सक्रिय",
-        connecting: "connecting… / कनेक्ट हो रहा है",
-        closed: "offline — last result / ऑफ़लाइन",
-        error: "connection error / त्रुटि",
-      }[state.connection] || "";
-    $("status-line").textContent = `Protecting ${platName} · ${conn}`;
-    btn.textContent = "Stop protection / सुरक्षा रोकें";
-    btn.className = "danger";
+    btn.textContent = "Stop protection";
+    btn.className = "primary-btn danger";
   } else {
-    $("status-line").textContent = state.latest
-      ? "Not protecting — last result shown / अंतिम परिणाम दिखाया गया"
-      : "Not protecting any tab / कोई टैब सुरक्षित नहीं";
-    btn.textContent =
-      currentTabPlatform && currentTabPlatform.isMeeting
-        ? `Protect ${platName} / कॉल सुरक्षित करें`
-        : "Protect this tab / टैब सुरक्षित करें";
-    btn.className = "primary";
+    btn.textContent = currentTabPlatform && currentTabPlatform.isMeeting
+      ? `Protect ${platName}`
+      : "Protect this tab";
+    btn.className = "primary-btn";
   }
 
-  // Continuous page-text scanner toggle (per-tab, opt-in)
+  // Continuous page-text scanner toggle
   const watch = $("watch");
   if (watch) {
     const watching = !!(state.textScan && state.textScan.active && state.textScan.tabId === currentTabId);
-    watch.textContent = watching
-      ? "Stop watching page text / टेक्स्ट निगरानी रोकें"
-      : "Watch page text (live) / लाइव टेक्स्ट निगरानी";
-    watch.className = watching ? "danger" : "secondary";
+    watch.textContent = watching ? "Stop Live Watch" : "Live Watch";
+    watch.className = watching ? "secondary-btn danger" : "secondary-btn";
   }
 
   // Refresh incident history
@@ -216,6 +204,18 @@ function refresh() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  await initTheme();
+
+  const themeBtn = $("theme-toggle");
+  if (themeBtn) {
+    themeBtn.addEventListener("click", async () => {
+      const curr = document.documentElement.getAttribute("data-theme") || "dark";
+      const next = curr === "dark" ? "light" : "dark";
+      applyTheme(next);
+      await chrome.storage.local.set({ theme: next });
+    });
+  }
+
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   currentTabId = tab ? tab.id : null;
   if (typeof AntaiPlatform !== "undefined") {
@@ -226,13 +226,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const type = running ? "antai-stop" : "antai-start";
     chrome.runtime.sendMessage({ type, tabId: currentTabId }, refresh);
   });
-
-  const meetingBtn = $("meeting-protect-btn");
-  if (meetingBtn) {
-    meetingBtn.addEventListener("click", () => {
-      chrome.runtime.sendMessage({ type: "antai-start", tabId: currentTabId }, refresh);
-    });
-  }
 
   $("options-link").addEventListener("click", (e) => {
     e.preventDefault();
@@ -260,7 +253,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const box = $("scan-result");
     const btn = $("scan");
     btn.disabled = true;
-    btn.textContent = "Scanning… / जांच जारी है…";
+    btn.textContent = "Scanning…";
     box.hidden = true;
     try {
       const [{ result: text } = {}] = await chrome.scripting.executeScript({
@@ -272,7 +265,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         },
       });
       if (!text) {
-        box.textContent = "No text found on this page / इस पेज पर कोई टेक्स्ट नहीं मिला।";
+        box.textContent = "No text found on this page.";
         box.hidden = false;
         return;
       }
@@ -292,7 +285,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       box.hidden = false;
     } finally {
       btn.disabled = false;
-      btn.textContent = "Scan text on this page / पेज टेक्स्ट स्कैन करें";
+      btn.textContent = "Scan Page";
     }
   });
 
@@ -304,7 +297,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     if (data.ingested === false) {
-      box.textContent = "✓ Not flagged — no scam-related language detected / सुरक्षित — कोई संदिग्ध भाषा नहीं।";
+      box.textContent = "✓ Clear — No scam language detected.";
       box.className = "scan-result ok";
       box.style.color = "";
       box.style.borderColor = "";
@@ -318,7 +311,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (v.verdict) lines.push(v.verdict);
     if (v.why) lines.push(v.why);
     if (v.action) lines.push("→ " + v.action);
-    if (!v.verdict && !v.why && !v.action) lines.push("Analyzed — no actionable risk found / कोई सीधा खतरा नहीं मिला।");
+    if (!v.verdict && !v.why && !v.action) lines.push("Analyzed — No actionable threat detected.");
     box.textContent = lines.join("\n");
     box.className = "scan-result";
     box.style.color = info.color;

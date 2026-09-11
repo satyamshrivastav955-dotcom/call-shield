@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <title>antAI Guardian</title>
@@ -9,78 +9,89 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
+    <!-- Header -->
     <header>
-      <span class="logo">antAI</span>
-      <span id="models" class="models">models: checking…</span>
+      <div class="brand">
+        <span class="brand-shield">🛡️</span>
+        <span class="brand-name">antAI</span>
+        <span class="brand-tag">SHIELD</span>
+      </div>
+      <div class="header-actions">
+        <span id="models" class="models-badge na" title="ML Model Status">● Offline</span>
+        <button id="theme-toggle" class="theme-btn" type="button" title="Toggle Theme" aria-label="Toggle theme">🌙</button>
+      </div>
     </header>
 
-    <!-- Meeting Detection Banner (Google Meet, Zoom, Teams) -->
-    <div id="meeting-banner" class="meeting-banner" hidden>
-      <div class="meeting-info">
-        <span id="meeting-icon" class="meeting-icon">📹</span>
-        <span id="meeting-title" class="meeting-title">Meeting call detected</span>
+    <!-- Status Ribbon -->
+    <div id="status-ribbon" class="status-ribbon">
+      <div class="status-indicator">
+        <span id="platform-icon" class="platform-icon">🌐</span>
+        <span id="status-line" class="status-text">Standby</span>
       </div>
-      <button id="meeting-protect-btn" class="meeting-btn" type="button">Protect this call / कॉल सुरक्षित करें</button>
-    </div>
-
-    <div id="status-line" class="status-line">Not protecting any tab / कोई टैब सुरक्षित नहीं</div>
-
-    <!-- Audio Streaming Live Visualizer -->
-    <div id="audio-visualizer" class="audio-visualizer" hidden>
-      <span class="pulse-dot"></span>
-      <span id="audio-meter-label" class="audio-label">Live Audio / ऑडियो सक्रिय</span>
-      <div class="meter-bar-track">
-        <div id="meter-bar-fill" class="meter-bar-fill"></div>
+      <div id="audio-visualizer" class="audio-visualizer" hidden>
+        <span class="pulse-dot"></span>
+        <div class="meter-track">
+          <div id="meter-bar-fill" class="meter-fill"></div>
+        </div>
       </div>
     </div>
 
-    <div class="gauge">
-      <svg viewBox="0 0 120 66" width="150" height="83" aria-hidden="true">
-        <path class="track" d="M 10 60 A 50 50 0 0 1 110 60"/>
-        <path id="arc" class="arc" d="M 10 60 A 50 50 0 0 1 110 60"/>
-        <text id="num" class="num" x="60" y="46">—</text>
-        <text class="den" x="60" y="60">/ 100</text>
-      </svg>
-    </div>
-    <div id="badge" class="badge">MONITORING</div>
-
-    <div id="rows" class="rows"></div>
-
-    <div class="rec">
-      <span class="rec-label">RECOMMENDATION / सिफारिश</span>
-      <p id="rec-text" class="rec-text">No analysis yet / अभी तक कोई विश्लेषण नहीं।</p>
+    <!-- Gauge Section -->
+    <div class="gauge-section">
+      <div class="gauge">
+        <svg viewBox="0 0 120 66" width="160" height="88" aria-hidden="true">
+          <path class="track" d="M 10 60 A 50 50 0 0 1 110 60"/>
+          <path id="arc" class="arc" d="M 10 60 A 50 50 0 0 1 110 60"/>
+          <text id="num" class="num" x="60" y="46">—</text>
+          <text class="den" x="60" y="58">/ 100</text>
+        </svg>
+      </div>
+      <div id="badge" class="badge">● MONITORING</div>
     </div>
 
-    <button id="toggle" class="primary" type="button">Protect this tab / टैब सुरक्षित करें</button>
-    <p id="error" class="error" hidden></p>
+    <!-- Forensic Signal Metrics -->
+    <div id="rows" class="signals-grid"></div>
 
-    <div class="scan">
-      <button id="scan" class="secondary" type="button">Scan text on this page / पेज टेक्स्ट स्कैन करें</button>
-      <p class="hint">Select text first, or checks whole page. Needs account in Options. / पहले टेक्स्ट चुनें या पूरा पेज जांचें।</p>
-      <div id="scan-result" class="scan-result" hidden></div>
-      <button id="watch" class="secondary" type="button">Watch page text (live) / लाइव टेक्स्ट निगरानी</button>
-      <p class="hint">Continuously alerts on scam language / संदिग्ध भाषा पर तत्काल चेतावनी।</p>
+    <!-- Recommendation Card -->
+    <div class="verdict-card">
+      <div class="verdict-label">RECOMMENDATION</div>
+      <p id="rec-text" class="rec-text">No active risk detected.</p>
     </div>
 
-    <!-- Incident History Collapsible Section -->
+    <!-- Primary Action Button -->
+    <button id="toggle" class="primary-btn" type="button">Protect this tab</button>
+    <p id="error" class="error-msg" hidden></p>
+
+    <!-- Secondary Actions -->
+    <div class="action-grid">
+      <button id="scan" class="secondary-btn" type="button">
+        <span class="btn-icon">⚡</span> Scan Page
+      </button>
+      <button id="watch" class="secondary-btn" type="button">
+        <span class="btn-icon">👁️</span> Live Watch
+      </button>
+    </div>
+    <div id="scan-result" class="scan-result" hidden></div>
+
+    <!-- Incident History Drawer -->
     <details id="incidents-details" class="incidents-panel">
       <summary class="incidents-summary">
-        <span>Incident History / घटना इतिहास</span>
-        <span id="popup-incidents-count" class="incidents-badge">0</span>
+        <span class="incidents-title">Threat Incidents</span>
+        <span id="popup-incidents-count" class="incidents-count">0</span>
       </summary>
       <div id="popup-incidents-list" class="popup-incidents-list">
-        <p class="popup-empty-hint">No incidents recorded / कोई घटना दर्ज नहीं</p>
+        <p class="popup-empty-hint">No flagged threats</p>
       </div>
       <div class="portal-footer">
         <a href="https://cybercrime.gov.in" target="_blank" rel="noopener noreferrer" class="portal-link">
-          🚨 Report on cybercrime.gov.in (Helpline 1930)
+          Helpline 1930 · cybercrime.gov.in ↗
         </a>
       </div>
     </details>
 
+    <!-- Footer -->
     <footer>
-      <a href="#" id="options-link">Options / विकल्प</a>
-      <span class="foot-note">Detection runs on your antAI server — scores are real.</span>
+      <a href="#" id="options-link" class="options-link">Settings & Account ⚙</a>
     </footer>
 
     <script src="popup.js"></script>
