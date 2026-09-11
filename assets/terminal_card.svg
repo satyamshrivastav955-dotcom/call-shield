@@ -1,44 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 510" width="100%" height="100%" style="background:#090d16; border-radius:12px; font-family:'Fira Code', 'JetBrains Mono', Consolas, Menlo, monospace;">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 490" width="100%" height="100%" style="background:#090d16; border-radius:12px; font-family:'Fira Code', 'JetBrains Mono', Consolas, Menlo, monospace;">
   <defs>
     <style>
       .term-cursor {
         animation: blink 1s step-end infinite;
       }
-      .line-1 { animation: fadeIn 0.4s ease-out forwards; }
-      .line-2 { animation: fadeIn 0.8s ease-out forwards; }
-      .line-3 { animation: fadeIn 1.2s ease-out forwards; }
-      .line-4 { animation: fadeIn 1.6s ease-out forwards; }
-      .line-5 { animation: fadeIn 2.0s ease-out forwards; }
-      .line-6 { animation: fadeIn 2.4s ease-out forwards; }
-      .line-7 { animation: fadeIn 2.8s ease-out forwards; }
-      .line-8 { animation: fadeIn 3.2s ease-out forwards; }
       .pulse-critical {
         animation: pulseCrit 1.5s ease-in-out infinite alternate;
-      }
-      .marquee-text {
-        animation: marquee 18s linear infinite;
       }
       @keyframes blink {
         0%, 100% { opacity: 1; }
         50% { opacity: 0; }
       }
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(4px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
       @keyframes pulseCrit {
         0% { fill: #EF4444; }
         100% { fill: #FF0055; filter: drop-shadow(0 0 6px #FF0055); }
-      }
-      @keyframes marquee {
-        0%   { transform: translateX(0); }
-        100% { transform: translateX(-50%); }
       }
     </style>
   </defs>
 
   <!-- Terminal Window Background -->
-  <rect width="950" height="510" rx="12" fill="#0b0f19" stroke="#1f293d" stroke-width="2"/>
+  <rect width="950" height="490" rx="12" fill="#0b0f19" stroke="#1f293d" stroke-width="2"/>
 
   <!-- Title Bar -->
   <rect width="950" height="40" rx="12" fill="#131b2e"/>
@@ -53,130 +34,83 @@
   <text x="475" y="25" fill="#94A3B8" font-size="13" font-weight="600" text-anchor="middle">antai-core-engine --live-defense [Session #4829-E2E]</text>
 
   <!-- Live Status Dot -->
-  <circle cx="910" cy="20" r="4.5" fill="#00E676"/>
-  <text x="898" y="24" fill="#00E676" font-size="11" font-weight="700" text-anchor="end">STREAMING ACTIVE</text>
+  <circle cx="914" cy="20" r="4.5" fill="#00E676"/>
+  <text x="902" y="24" fill="#00E676" font-size="11" font-weight="700" text-anchor="end">STREAMING ACTIVE</text>
 
-  <!-- Status Ticker Bar -->
-  <rect y="40" width="950" height="22" fill="#0f1826"/>
-  <clipPath id="ticker-clip">
-    <rect x="0" y="40" width="950" height="22"/>
-  </clipPath>
-  <g clip-path="url(#ticker-clip)">
-    <text class="marquee-text" y="55" fill="#64748B" font-size="11" font-family="'Fira Code', monospace">
-      <tspan fill="#4B5563">[00:00_M#0]</tspan>
-      <tspan fill="#64748B" dx="6">[</tspan><tspan fill="#EF4444" font-weight="700">INTERCEPTOR</tspan><tspan fill="#64748B">]</tspan>
-      <tspan fill="#94A3B8" dx="8">BAND:</tspan>
-      <tspan fill="#EF4444" font-weight="700" dx="4">CRITICAL RISK</tspan>
-      <tspan fill="#94A3B8" dx="14">MODEL:</tspan>
-      <tspan fill="#F59E0B" font-weight="700" dx="4">AST-ASV5+wav2vec2</tspan>
-      <tspan fill="#94A3B8" dx="14">SPOOF:</tspan>
-      <tspan fill="#EF4444" font-weight="700" dx="4">0.971</tspan>
-      <tspan fill="#94A3B8" dx="14">BIOMETRIC:</tspan>
-      <tspan fill="#F43F5E" font-weight="700" dx="4">[IMPERSONATION]</tspan>
-      <tspan fill="#94A3B8" dx="14">FREEZE:</tspan>
-      <tspan fill="#FBBF24" font-weight="700" dx="4">ACTIVE</tspan>
-      <tspan fill="#94A3B8" dx="14">SESSION:</tspan>
-      <tspan fill="#38BDF8" dx="4">#4829-E2E</tspan>
-      <tspan dx="40" fill="#4B5563">[00:00_M#0]</tspan>
-      <tspan fill="#64748B" dx="6">[</tspan><tspan fill="#EF4444" font-weight="700">INTERCEPTOR</tspan><tspan fill="#64748B">]</tspan>
-      <tspan fill="#94A3B8" dx="8">BAND:</tspan>
-      <tspan fill="#EF4444" font-weight="700" dx="4">CRITICAL RISK</tspan>
-      <tspan fill="#94A3B8" dx="14">MODEL:</tspan>
-      <tspan fill="#F59E0B" font-weight="700" dx="4">AST-ASV5+wav2vec2</tspan>
-      <tspan fill="#94A3B8" dx="14">SPOOF:</tspan>
-      <tspan fill="#EF4444" font-weight="700" dx="4">0.971</tspan>
-      <tspan fill="#94A3B8" dx="14">BIOMETRIC:</tspan>
-      <tspan fill="#F43F5E" font-weight="700" dx="4">[IMPERSONATION]</tspan>
-      <tspan fill="#94A3B8" dx="14">FREEZE:</tspan>
-      <tspan fill="#FBBF24" font-weight="700" dx="4">ACTIVE</tspan>
-      <tspan fill="#94A3B8" dx="14">SESSION:</tspan>
-      <tspan fill="#38BDF8" dx="4">#4829-E2E</tspan>
-    </text>
+  <!-- Line 1: Startup & DAG Compile -->
+  <g font-size="12.5">
+    <text x="30" y="74" fill="#64748B">[00:00.012]</text>
+    <text x="125" y="74" fill="#38BDF8" font-weight="700">[ORCHESTRATOR]</text>
+    <text x="248" y="74" fill="#E2E8F0">Compiling 14-Node LangGraph DAG: router ➔ voice/video/text ➔ fusion ➔ intercept</text>
+    <text x="850" y="74" fill="#00F5D4" font-weight="700">[READY]</text>
   </g>
-  <line x1="0" y1="62" x2="950" y2="62" stroke="#1f293d" stroke-width="1"/>
 
-  <!-- Terminal Body Content -->
-  <g transform="translate(24, 80)" font-size="12.5" line-height="1.6">
-    <!-- Line 1: Startup & DAG Compile -->
-    <g class="line-1">
-      <text y="0" fill="#64748B">[00:00.012]</text>
-      <text x="95" y="0" fill="#38BDF8" font-weight="700">[ORCHESTRATOR]</text>
-      <text x="215" y="0" fill="#E2E8F0">Compiling 14-Node LangGraph DAG: router ➔ voice/video/text ➔ fusion ➔ intercept</text>
-      <text x="820" y="0" fill="#00F5D4" font-weight="700">[READY]</text>
-    </g>
+  <!-- Line 2: Ingestion & VAD -->
+  <g font-size="12.5">
+    <text x="30" y="104" fill="#64748B">[00:00.145]</text>
+    <text x="125" y="104" fill="#00F5D4" font-weight="700">[INGESTION]</text>
+    <text x="248" y="104" fill="#E2E8F0">Audio stream tapped (/api/stream/ws). Silero-VAD segmented active speech (1.82s)</text>
+  </g>
 
-    <!-- Line 2: Ingestion & VAD -->
-    <g class="line-2" transform="translate(0, 28)">
-      <text y="0" fill="#64748B">[00:00.145]</text>
-      <text x="95" y="0" fill="#00F5D4" font-weight="700">[INGESTION]</text>
-      <text x="215" y="0" fill="#E2E8F0">Audio stream tapped (/api/stream/ws). Silero-VAD segmented active speech (1.82s)</text>
-    </g>
+  <!-- Line 3: ASR Transcript -->
+  <g font-size="12.5">
+    <text x="30" y="134" fill="#64748B">[00:00.410]</text>
+    <text x="125" y="134" fill="#818CF8" font-weight="700">[STREAM-ASR]</text>
+    <text x="248" y="134" fill="#FDE68A">&quot;Mom, it's me! I was in a bad accident, need ₹50,000 immediately, do not tell Dad!&quot;</text>
+  </g>
 
-    <!-- Line 3: ASR Transcript -->
-    <g class="line-3" transform="translate(0, 56)">
-      <text y="0" fill="#64748B">[00:00.410]</text>
-      <text x="95" y="0" fill="#818CF8" font-weight="700">[STREAM-ASR]</text>
-      <text x="215" y="0" fill="#FDE68A">"Mom, it's me! I was in a bad accident, need ₹50,000 immediately, do not tell Dad!"</text>
-    </g>
+  <!-- Line 4: SSL Voice Analysis -->
+  <g font-size="12.5">
+    <text x="30" y="168" fill="#64748B">[00:00.620]</text>
+    <text x="125" y="168" fill="#F43F5E" font-weight="700">[VOICE-SSL]</text>
+    <text x="248" y="168" fill="#E2E8F0">AST-ASV5 + wav2vec2 ensemble spoof_prob: </text>
+    <text x="585" y="168" fill="#FF3366" font-weight="700">0.971 (97.1% SYNTHETIC CLONE)</text>
+    <rect x="805" y="154" width="112" height="20" rx="4" fill="#4C0519" stroke="#E11D48" stroke-width="0.8"/>
+    <text x="861" y="168" fill="#FDA4AF" font-size="10" font-weight="700" text-anchor="middle">HARD SIGNAL</text>
+  </g>
 
-    <!-- Line 4: SSL Voice Analysis -->
-    <g class="line-4" transform="translate(0, 94)">
-      <text y="0" fill="#64748B">[00:00.620]</text>
-      <text x="95" y="0" fill="#F43F5E" font-weight="700">[VOICE-SSL]</text>
-      <text x="215" y="0" fill="#E2E8F0">AST-ASV5 + wav2vec2 ensemble spoof_prob: </text>
-      <text x="560" y="0" fill="#FF3366" font-weight="700">0.971 (97.1% SYNTHETIC CLONE)</text>
-      <rect x="790" y="-12" width="100" height="18" rx="4" fill="#4C0519"/>
-      <text x="840" y="1" fill="#F43F5E" font-size="10" font-weight="700" text-anchor="middle">HARD SIGNAL</text>
-    </g>
+  <!-- Line 5: Biometric Verification -->
+  <g font-size="12.5">
+    <text x="30" y="202" fill="#64748B">[00:00.710]</text>
+    <text x="125" y="202" fill="#F43F5E" font-weight="700">[BIOMETRIC]</text>
+    <text x="248" y="202" fill="#E2E8F0">ECAPA-TDNN cosine vs enrolled son profile: </text>
+    <text x="585" y="202" fill="#F43F5E" font-weight="700">0.284 &lt; 0.600 threshold</text>
+    <text x="785" y="202" fill="#FCA5A5" font-weight="700">[IMPERSONATION]</text>
+  </g>
 
-    <!-- Line 5: Biometric Verification -->
-    <g class="line-5" transform="translate(0, 132)">
-      <text y="0" fill="#64748B">[00:00.710]</text>
-      <text x="95" y="0" fill="#F43F5E" font-weight="700">[BIOMETRIC]</text>
-      <text x="215" y="0" fill="#E2E8F0">ECAPA-TDNN cosine vs enrolled son profile: </text>
-      <text x="560" y="0" fill="#F43F5E" font-weight="700">0.284 &lt; 0.600 threshold</text>
-      <text x="755" y="0" fill="#FCA5A5" font-weight="600">[IMPERSONATION]</text>
-    </g>
+  <!-- Line 6: NLP Scam Intent & Urgency -->
+  <g font-size="12.5">
+    <text x="30" y="236" fill="#64748B">[00:00.790]</text>
+    <text x="125" y="236" fill="#FBBF24" font-weight="700">[NLP-INTENT]</text>
+    <text x="248" y="236" fill="#94A3B8">Scam: <tspan fill="#FDE047" font-weight="700">Family Emergency (0.94)</tspan>  |  Urgency: <tspan fill="#FDE047" font-weight="700">0.880</tspan>  |  Ask: <tspan fill="#FF5376" font-weight="700">Direct Wire</tspan></text>
+  </g>
 
-    <!-- Line 6: NLP Scam Intent & Urgency -->
-    <g class="line-6" transform="translate(0, 170)">
-      <text y="0" fill="#64748B">[00:00.790]</text>
-      <text x="95" y="0" fill="#FBBF24" font-weight="700">[NLP-INTENT]</text>
-      <text x="215" y="0" fill="#E2E8F0">Scam: </text>
-      <text x="265" y="0" fill="#FDE047" font-weight="700">Family Emergency (0.94)</text>
-      <text x="445" y="0" fill="#E2E8F0">| Urgency Panic Index: </text>
-      <text x="605" y="0" fill="#FDE047" font-weight="700">0.880</text>
-      <text x="660" y="0" fill="#E2E8F0">| Ask: </text>
-      <text x="705" y="0" fill="#FF5376" font-weight="700">Direct Wire</text>
-    </g>
+  <!-- Divider Line -->
+  <line x1="30" y1="258" x2="920" y2="258" stroke="#1F293D" stroke-width="1.5" stroke-dasharray="4,4"/>
 
-    <!-- Divider Line -->
-    <line x1="0" y1="200" x2="890" y2="200" stroke="#1F293D" stroke-width="1.5" stroke-dasharray="4,4"/>
+  <!-- Line 7: Calibrated Risk Fusion Result -->
+  <g font-size="12.5">
+    <text x="30" y="288" fill="#64748B">[00:00.840]</text>
+    <text x="125" y="288" fill="#A855F7" font-weight="700">[FUSION-CAL]</text>
+    <text x="248" y="288" fill="#FFFFFF" font-weight="700">CALCULATED COMPOSITE RISK: </text>
+    <text x="475" y="288" class="pulse-critical" font-size="15" font-weight="900">94 / 100</text>
+    <rect x="560" y="273" width="168" height="22" rx="4" fill="#7F1D1D" stroke="#EF4444" stroke-width="1"/>
+    <text x="644" y="288" fill="#FEE2E2" font-size="11" font-weight="800" text-anchor="middle">BAND: CRITICAL RISK</text>
+  </g>
 
-    <!-- Line 7: Calibrated Risk Fusion Result -->
-    <g class="line-7" transform="translate(0, 230)">
-      <text y="0" fill="#64748B">[00:00.840]</text>
-      <text x="95" y="0" fill="#A855F7" font-weight="700">[FUSION-CAL]</text>
-      <text x="215" y="0" fill="#FFFFFF" font-weight="700">CALCULATED COMPOSITE RISK: </text>
-      <text x="450" y="0" class="pulse-critical" font-size="16" font-weight="900">94 / 100</text>
-      <rect x="540" y="-14" width="160" height="22" rx="4" fill="#7F1D1D" stroke="#EF4444" stroke-width="1"/>
-      <text x="620" y="2" fill="#FEE2E2" font-weight="800" text-anchor="middle">BAND: CRITICAL RISK</text>
-    </g>
+  <!-- Line 8: Intercept Directives & Explainable AI Card -->
+  <g transform="translate(30, 310)">
+    <rect width="890" height="102" rx="8" fill="#141E33" stroke="#00F5D4" stroke-width="1.2"/>
+    <text x="18" y="25" fill="#00F5D4" font-weight="700" font-size="13">🛡️ AUTONOMOUS PROTECTIVE INTERCEPT TRIGGERED:</text>
+    <text x="18" y="48" fill="#F1F5F9" font-size="12">➔ <tspan fill="#FF5376" font-weight="700">CALL PAUSED</tspan> : AiInsightWindow &amp; DeepfakeAlertDialog rendered on Android client</text>
+    <text x="18" y="69" fill="#F1F5F9" font-size="12">➔ <tspan fill="#FBBF24" font-weight="700">FREEZE HOLD</tspan> : Financial transfer / OTP modal locked with conscious override required</text>
+    <text x="18" y="90" fill="#F1F5F9" font-size="12">➔ <tspan fill="#38BDF8" font-weight="700">LLM REASONING</tspan> : &quot;Do not send ₹50,000. Voice is 97% synthetic clone. Call your son on his regular cell.&quot;</text>
+  </g>
 
-    <!-- Line 8: Intercept Directives & Explainable AI -->
-    <g class="line-8" transform="translate(0, 275)">
-      <rect width="890" height="95" rx="8" fill="#141E33" stroke="#00F5D4" stroke-width="1.2"/>
-      <text x="16" y="24" fill="#00F5D4" font-weight="700">🛡️ AUTONOMOUS PROTECTIVE INTERCEPT TRIGGERED:</text>
-      <text x="16" y="46" fill="#F1F5F9">➔ <tspan fill="#FF5376" font-weight="700">CALL PAUSED</tspan> : AiInsightWindow &amp; DeepfakeAlertDialog rendered on Android client</text>
-      <text x="16" y="66" fill="#F1F5F9">➔ <tspan fill="#FBBF24" font-weight="700">FREEZE HOLD</tspan> : Financial transfer / OTP modal locked with conscious override required</text>
-      <text x="16" y="86" fill="#F1F5F9">➔ <tspan fill="#38BDF8" font-weight="700">LLM REASONING</tspan> : "Do not send ₹50,000. Voice is 97% synthetic clone. Call your son on his regular cell."</text>
-    </g>
-
-    <!-- Terminal Prompt & Blinking Cursor -->
-    <g transform="translate(0, 396)">
-      <text y="0" fill="#00F5D4" font-weight="700">antai@defense-node:~$</text>
-      <text x="190" y="0" fill="#94A3B8">monitoring active streams...</text>
-      <rect x="405" y="-12" width="8.5" height="16" fill="#00F5D4" class="term-cursor"/>
-    </g>
+  <!-- Terminal Prompt & Blinking Cursor -->
+  <g transform="translate(30, 448)" font-size="12.5">
+    <text x="0" y="0" fill="#00F5D4" font-weight="700">antai@defense-node:~$</text>
+    <text x="195" y="0" fill="#94A3B8">monitoring active streams...</text>
+    <rect x="415" y="-12" width="8.5" height="16" fill="#00F5D4" class="term-cursor"/>
   </g>
 </svg>
